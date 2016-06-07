@@ -20,10 +20,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Sending HTTP Methods: GET, POST, PUT, PATCH, and DELETE
  */
 public class HTTPMethods {
+
+    /**
+     * The logger for this class.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(HTTPMethods.class);
 
     /**
      * Send HTTP GET request to the urlString and return response code and response body
@@ -34,6 +42,7 @@ public class HTTPMethods {
     public static Map<String,Object> doGet(String urlString){
         HttpURLConnection connection = null;
         try {
+            LOGGER.info("Getting: {}", urlString);
             //Create connection
             URL url = new URL(urlString);
             connection = (HttpURLConnection) url.openConnection();
@@ -83,6 +92,7 @@ public class HTTPMethods {
     public static Map<String,Object> doPost(String urlString, String postBody){
         HttpURLConnection connection = null;
         try {
+            LOGGER.info("Posting: {}", urlString);
             //Create connection
             URL url = new URL(urlString);
             byte[] postData = postBody.getBytes(StandardCharsets.UTF_8);
@@ -127,6 +137,7 @@ public class HTTPMethods {
     public static Map<String,Object> doPut(String urlString, String putBody){
         HttpURLConnection connection = null;
         try {
+            LOGGER.info("Putting: {}", urlString);
             //Create connection
             URL url = new URL(urlString);
             byte[] postData = putBody.getBytes(StandardCharsets.UTF_8);
@@ -180,6 +191,7 @@ public class HTTPMethods {
     public static Map<String,Object> doDelete(String urlString){
         HttpURLConnection connection = null;
         try {
+            LOGGER.info("Deleting: {}", urlString);
             //Create connection
             URL url = new URL(urlString);
             connection = (HttpURLConnection) url.openConnection();
@@ -214,6 +226,7 @@ public class HTTPMethods {
     public static Map<String,Object> doPatch(String urlString, String patchBody){
         URI uri = null;
         try {
+            LOGGER.info("Patching: {}", urlString);
             uri = new URI(urlString);
 
             CloseableHttpClient httpClient = HttpClients.createDefault();
