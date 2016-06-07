@@ -51,6 +51,79 @@ public class Capability1Tests {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
 
+        // Check if there is data to test on. We check Observation and
+        // HistoricalLocation, since if those exist, all other entities should
+        // also exist.
+        String responseObservations = getEntities(EntityType.OBSERVATION);
+        String responseHistLocations = getEntities(EntityType.HISTORICAL_LOCATION);
+        int countObservations = countEntitiesInResponse(responseObservations);
+        int countHistLocations = countEntitiesInResponse(responseHistLocations);
+        if (countHistLocations == 0 || countObservations == 0) {
+            // No data found, insert test data.
+            createTestEntities();
+        }
+    }
+
+    private void createTestEntities() {
+        String urlParameters = "{\n"
+                + "    \"description\": \"thing 1\",\n"
+                + "    \"properties\": {\n"
+                + "        \"reference\": \"first\"\n"
+                + "    },\n"
+                + "    \"Locations\": [\n"
+                + "        {\n"
+                + "            \"description\": \"location 1\",\n"
+                + "            \"location\": {\n"
+                + "                \"type\": \"Point\",\n"
+                + "                \"coordinates\": [\n"
+                + "                    -117.05,\n"
+                + "                    51.05\n"
+                + "                ]\n"
+                + "            },\n"
+                + "            \"encodingType\": \"http://example.org/location_types#GeoJSON\"\n"
+                + "        }\n"
+                + "    ],\n"
+                + "    \"Datastreams\": [\n"
+                + "        {\n"
+                + "            \"unitOfMeasurement\": {\n"
+                + "                \"name\": \"Lumen\",\n"
+                + "                \"symbol\": \"lm\",\n"
+                + "                \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/unit/Instances.html#Lumen\"\n"
+                + "            },\n"
+                + "            \"description\": \"datastream 1\",\n"
+                + "            \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
+                + "            \"ObservedProperty\": {\n"
+                + "                \"name\": \"Luminous Flux\",\n"
+                + "                \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/quantity/Instances.html#LuminousFlux\",\n"
+                + "                \"description\": \"observedProperty 1\"\n"
+                + "            },\n"
+                + "            \"Sensor\": {\n"
+                + "                \"description\": \"sensor 1\",\n"
+                + "                \"encodingType\": \"http://schema.org/description\",\n"
+                + "                \"metadata\": \"Light flux sensor\"\n"
+                + "            },\n"
+                + "            \"Observations\": [{\n"
+                + "                \"phenomenonTime\": \"2015-03-01T00:00:00Z\",\n"
+                + "                \"result\": 1, \n"
+                + "                \"FeatureOfInterest\": {\n"
+                + "                    \"description\": \"Some Feature\",\n"
+                + "                    \"encodingType\": \"application/vnd.geo+json\",\n"
+                + "                    \"feature\": {\n"
+                + "                        \"type\": \"Feature\",\n"
+                + "                        \"geometry\": {\n"
+                + "                            \"type\": \"Polygon\",\n"
+                + "                            \"coordinates\": [\n"
+                + "                                [[100,50], [10,9], [23,4], [100,50]], [[30,20], [10,4], [4,22], [30,20]]\n"
+                + "                            ]\n"
+                + "                        }"
+                + "                    }"
+                + "                }"
+                + "            }]"
+                + "        }\n"
+                + "    ]\n"
+                + "}";
+        String urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.THING, -1, null, null);
+        Map<String, Object> responseMap = HTTPMethods.doPost(urlString, urlParameters);
     }
 
     /**
@@ -559,6 +632,18 @@ public class Capability1Tests {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
 
+    }
+
+    private int countEntitiesInResponse(String response) {
+        try {
+            JSONObject jsonResponse = new JSONObject(response);
+            JSONArray entities = jsonResponse.getJSONArray("value");
+            return entities.length();
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
+        }
+        return 0;
     }
 
     /**
