@@ -80,7 +80,7 @@ public class Capability1Tests {
                 + "                    51.05\n"
                 + "                ]\n"
                 + "            },\n"
-                + "            \"encodingType\": \"http://example.org/location_types#GeoJSON\"\n"
+                + "            \"encodingType\": \"application/vnd.geo+json\"\n"
                 + "        }\n"
                 + "    ],\n"
                 + "    \"Datastreams\": [\n"
