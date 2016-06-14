@@ -38,19 +38,22 @@ public class EntityPropertiesSampleValue {
      */
     public static final Comparable[] OBSERVATION_PROPERTIES_Values = {
         ISODateTimeFormat.dateTime().parseDateTime("2015-03-02T00:00:00.000Z"),
-        "'2'",
+        Integer.valueOf(2),
         ISODateTimeFormat.dateTime().parseDateTime("2015-03-02T00:00:00.000Z")};
     /**
      * Sample properties for FeatureOfInterest entity.
      */
     public static final String[] FEATURE_OF_INTEREST_PROPERTIES_Values = {"'Generated using location details: location 1'", "'application/vnd.geo+json'", "feature"};
 
-
     /**
-     * Returning the sample property value for the properties[index] of the entityType
+     * Returning the sample property value for the properties[index] of the
+     * entityType
+     *
      * @param entityType The type of the entity in the format of EntityType enum
-     * @param index The index of the requested properties in the properties list of the entityType
-     * @return The sample value from the properties list of the given "entityType" positioned in location "index" in the list
+     * @param index The index of the requested properties in the properties list
+     * of the entityType
+     * @return The sample value from the properties list of the given
+     * "entityType" positioned in location "index" in the list
      */
     public static Comparable getPropertyValueFor(EntityType entityType, int index) {
         switch (entityType) {
