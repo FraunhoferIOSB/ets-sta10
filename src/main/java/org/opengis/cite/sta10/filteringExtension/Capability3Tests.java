@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
@@ -143,7 +142,8 @@ public class Capability3Tests {
     /**
      * This method is testing $top query option. It tests $top for collection of
      * entities with 1 level and 2 levels resource path. It also tests
-     * {@literal @iot.nextLink} with regard to $top.
+     *
+     * @iot.nextLink with regard to $top.
      */
     @Test(description = "GET Entities with $top", groups = "level-3")
     public void readEntitiesWithTopQO() {
@@ -169,7 +169,8 @@ public class Capability3Tests {
     /**
      * This method is testing $skip query option. It tests $skip for collection
      * of entities with 1 level and 2 levels resource path. It also tests
-     * {@literal @iot.nextLink} with regard to $skip.
+     *
+     * @iot.nextLink with regard to $skip.
      */
     @Test(description = "GET Entities with $skip", groups = "level-3")
     public void readEntitiesWithSkipQO() {
@@ -1929,12 +1930,14 @@ public class Capability3Tests {
         try {
             //First Thing
             String urlParameters = "{\n"
+                    + "    \"name\": \"thing 1\",\n"
                     + "    \"description\": \"thing 1\",\n"
                     + "    \"properties\": {\n"
                     + "        \"reference\": \"first\"\n"
                     + "    },\n"
                     + "    \"Locations\": [\n"
                     + "        {\n"
+                    + "            \"name\": \"location 1\",\n"
                     + "            \"description\": \"location 1\",\n"
                     + "            \"location\": {\n"
                     + "                \"type\": \"Point\",\n"
@@ -1953,6 +1956,7 @@ public class Capability3Tests {
                     + "                \"symbol\": \"lm\",\n"
                     + "                \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/unit/Instances.html/Lumen\"\n"
                     + "            },\n"
+                    + "            \"name\": \"datastream 1\",\n"
                     + "            \"description\": \"datastream 1\",\n"
                     + "            \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
                     + "            \"ObservedProperty\": {\n"
@@ -1961,6 +1965,7 @@ public class Capability3Tests {
                     + "                \"description\": \"observedProperty 1\"\n"
                     + "            },\n"
                     + "            \"Sensor\": {\n"
+                    + "                \"name\": \"sensor 1\",\n"
                     + "                \"description\": \"sensor 1\",\n"
                     + "                \"encodingType\": \"http://schema.org/description\",\n"
                     + "                \"metadata\": \"Light flux sensor\"\n"
@@ -1972,6 +1977,7 @@ public class Capability3Tests {
                     + "                \"symbol\": \"C\",\n"
                     + "                \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/unit/Instances.html/Lumen\"\n"
                     + "            },\n"
+                    + "            \"name\": \"datastream 2\",\n"
                     + "            \"description\": \"datastream 2\",\n"
                     + "            \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
                     + "            \"ObservedProperty\": {\n"
@@ -1980,6 +1986,7 @@ public class Capability3Tests {
                     + "                \"description\": \"observedProperty 2\"\n"
                     + "            },\n"
                     + "            \"Sensor\": {\n"
+                    + "                \"name\": \"sensor 2\",\n"
                     + "                \"description\": \"sensor 2\",\n"
                     + "                \"encodingType\": \"http://schema.org/description\",\n"
                     + "                \"metadata\": \"Tempreture sensor\"\n"
@@ -2025,12 +2032,14 @@ public class Capability3Tests {
 
             //Second Thing
             urlParameters = "{\n"
+                    + "    \"name\": \"thing 2\",\n"
                     + "    \"description\": \"thing 2\",\n"
                     + "    \"properties\": {\n"
                     + "        \"reference\": \"second\"\n"
                     + "    },\n"
                     + "    \"Locations\": [\n"
                     + "        {\n"
+                    + "            \"name\": \"location 2\",\n"
                     + "            \"description\": \"location 2\",\n"
                     + "            \"location\": {\n"
                     + "                \"type\": \"Point\",\n"
@@ -2049,6 +2058,7 @@ public class Capability3Tests {
                     + "                \"symbol\": \"lm\",\n"
                     + "                \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/unit/Instances.html/Lumen\"\n"
                     + "            },\n"
+                    + "            \"name\": \"datastream 3\",\n"
                     + "            \"description\": \"datastream 3\",\n"
                     + "            \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
                     + "            \"ObservedProperty\": {\n"
@@ -2057,6 +2067,7 @@ public class Capability3Tests {
                     + "                \"description\": \"observedProperty 3\"\n"
                     + "            },\n"
                     + "            \"Sensor\": {\n"
+                    + "                \"name\": \"sensor 3\",\n"
                     + "                \"description\": \"sensor 3\",\n"
                     + "                \"encodingType\": \"http://schema.org/description\",\n"
                     + "                \"metadata\": \"Second Light flux sensor\"\n"
@@ -2068,12 +2079,14 @@ public class Capability3Tests {
                     + "                \"symbol\": \"C\",\n"
                     + "                \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/unit/Instances.html/Lumen\"\n"
                     + "            },\n"
+                    + "            \"name\": \"datastream 2\",\n"
                     + "            \"description\": \"datastream 2\",\n"
                     + "            \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
                     + "            \"ObservedProperty\": {\n"
                     + "                \"@iot.id\": " + observedPropertyId2 + "\n"
                     + "            },\n"
                     + "            \"Sensor\": {\n"
+                    + "                \"name\": \"sensor 4 \",\n"
                     + "                \"description\": \"sensor 4 \",\n"
                     + "                \"encodingType\": \"http://schema.org/description\",\n"
                     + "                \"metadata\": \"Second Tempreture sensor\"\n"
