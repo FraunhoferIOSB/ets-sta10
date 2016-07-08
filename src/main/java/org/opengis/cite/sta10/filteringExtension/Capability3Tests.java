@@ -142,8 +142,7 @@ public class Capability3Tests {
     /**
      * This method is testing $top query option. It tests $top for collection of
      * entities with 1 level and 2 levels resource path. It also tests
-     *
-     * @iot.nextLink with regard to $top.
+     * {@literal @iot.nextLink} with regard to $top.
      */
     @Test(description = "GET Entities with $top", groups = "level-3")
     public void readEntitiesWithTopQO() {
@@ -169,8 +168,7 @@ public class Capability3Tests {
     /**
      * This method is testing $skip query option. It tests $skip for collection
      * of entities with 1 level and 2 levels resource path. It also tests
-     *
-     * @iot.nextLink with regard to $skip.
+     * {@literal @iot.nextLink} with regard to $skip.
      */
     @Test(description = "GET Entities with $skip", groups = "level-3")
     public void readEntitiesWithSkipQO() {
