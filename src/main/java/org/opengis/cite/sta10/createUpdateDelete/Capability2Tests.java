@@ -206,7 +206,11 @@ public class Capability2Tests {
             entity = postEntity(EntityType.OBSERVATION, urlParameters);
             long obsId1 = entity.getLong(ControlInformation.ID);
             observationIds.add(obsId1);
-			//POST Observation without FOI (Automatic creation of FOI)
+            // Check the type of result, should be numeric.
+            Object result = entity.get("result");
+            Assert.assertTrue(result instanceof Number, "Numeric result no longer Numeric!");
+
+            //POST Observation without FOI (Automatic creation of FOI)
             //Add location to the Thing
             urlParameters = "{\"Locations\":[{\"@iot.id\":" + locationId + "}]}";
             patchEntity(EntityType.THING, urlParameters, thingId);
@@ -214,7 +218,7 @@ public class Capability2Tests {
             urlParameters = "{\n"
                     + "  \"phenomenonTime\": \"2015-03-01T00:00:00.000Z\",\n"
                     + "  \"resultTime\": \"2015-03-01T01:00:00.000Z\",\n"
-                    + "  \"result\": 100,\n"
+                    + "  \"result\": \"100\",\n"
                     + "  \"Datastream\":{\"@iot.id\": " + datastreamId + "}\n"
                     + "}";
             entity = postEntity(EntityType.OBSERVATION, urlParameters);
@@ -223,6 +227,10 @@ public class Capability2Tests {
             observationIds.add(obsId2);
             long automatedFOIId = checkAutomaticInsertionOfFOI(obsId2, locationEntity, -1);
             foiIds.add(automatedFOIId);
+            // Check the type of result, should be String.
+            result = entity.get("result");
+            Assert.assertTrue(result instanceof String, "String result no longer String!");
+
             //POST another Observation to make sure it is linked to the previously created FOI
             urlParameters = "{\n"
                     + "  \"phenomenonTime\": \"2015-05-01T00:00:00.000Z\",\n"
