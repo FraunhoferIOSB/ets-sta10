@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
@@ -331,6 +332,12 @@ public class Capability3Tests {
         checkResults(urlString, 1, "1", fetchError, error);
 
         filter = "$filter=1 add 2.0 mod (result add 1) eq 1";
+        fetchError = "There is problem for GET Observations using " + filter;
+        error = filter + "  should return all Observations with a result of 1.";
+        urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.OBSERVATION, -1, null, "?" + URLEncoder.encode(filter, "UTF-8"));
+        checkResults(urlString, 1, "1", fetchError, error);
+
+        filter = "$filter=14 div (result add 1) mod 3 mul 3 eq 3";
         fetchError = "There is problem for GET Observations using " + filter;
         error = filter + "  should return all Observations with a result of 1.";
         urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.OBSERVATION, -1, null, "?" + URLEncoder.encode(filter, "UTF-8"));
