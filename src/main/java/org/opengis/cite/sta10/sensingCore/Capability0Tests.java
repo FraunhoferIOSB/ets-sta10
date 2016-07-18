@@ -163,7 +163,7 @@ public class Capability0Tests {
         return 0;
     }
 
-    @Test(description = "GET Entities", groups = "level-0")
+    @Test(description = "GET Entities", groups = "level-0", priority = -1)
     public void emptyTest() {
         // We do not actually test anything here.
     }
