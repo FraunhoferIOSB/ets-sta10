@@ -1799,10 +1799,9 @@ public class Capability3Tests {
     /**
      * This helper method is checking $filter for a collection.
      *
-     * @param entityType Entity type from EntityType enum list <<<<<<< HEAD
+     * @param entityType Entity type from EntityType enum list
      * @throws java.io.UnsupportedEncodingException Should not happen, UTF-8
-     * should always be supported. ======= >>>>>>> * Fixed quoted non-string
-     * comparison values.
+     * should always be supported.
      */
     private void checkFilterForEntityType(EntityType entityType) throws UnsupportedEncodingException {
         String[] properties = EntityProperties.getPropertiesListFor(entityType);
@@ -1855,10 +1854,9 @@ public class Capability3Tests {
     /**
      * This helper method is checking $filter for 2 level of entities.
      *
-     * @param entityType Entity type from EntityType enum list <<<<<<< HEAD
+     * @param entityType Entity type from EntityType enum list
      * @throws java.io.UnsupportedEncodingException Should not happen, UTF-8
-     * should always be supported. ======= >>>>>>> * Fixed quoted non-string
-     * comparison values.
+     * should always be supported.
      */
     private void checkFilterForEntityTypeRelations(EntityType entityType) throws UnsupportedEncodingException {
         String[] relations = EntityRelations.getRelationsListFor(entityType);
