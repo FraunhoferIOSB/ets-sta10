@@ -3,5 +3,7 @@
 <properties version="1.0">
     <comment>Sample test run arguments</comment>
     <entry key="iut">http://localhost:8080/SensorThingsService/v1.0</entry>
-    <entry key="ics">3</entry>
+    <entry key="ics">8</entry>
+	<entry key="mqtt_server">tcp://localhost:1883</entry>
+	<entry key="mqtt_timeout">30000</entry>
 </properties>
