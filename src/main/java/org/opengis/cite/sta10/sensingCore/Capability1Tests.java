@@ -27,9 +27,9 @@ public class Capability1Tests {
     /**
      * The root URL of the SensorThings service under the test
      */
-    public String rootUri;//="http://localhost:8080/OGCSensorThings-NewQueries/v1.0";
+    public String rootUri;//="http://localhost:8080/OGCSensorThings/v1.0";
     /**
-     * The variable tha defines to which recursive level the resource path
+     * The variable that defines to which recursive level the resource path
      * should be tested
      */
     private final int resourcePathLevel = 4;
@@ -39,7 +39,7 @@ public class Capability1Tests {
      * class.
      *
      * @param testContext The test context to find out whether this class is
-     * requested to test or not
+     *                    requested to test or not
      */
     @BeforeClass
     public void obtainTestSubject(ITestContext testContext) {
@@ -166,8 +166,8 @@ public class Capability1Tests {
      * check the response is 200.
      *
      * @param entityType Entity type from EntityType enum list
-     * @param id The id of the entity
-     * @param property The property to get requested
+     * @param id         The id of the entity
+     * @param property   The property to get requested
      */
     private void checkGetPropertyOfEntity(EntityType entityType, long id, String property) {
         try {
@@ -194,13 +194,13 @@ public class Capability1Tests {
      * and check the response is 200.
      *
      * @param entityType Entity type from EntityType enum list
-     * @param id The id of the entity
-     * @param property The property to get requested
+     * @param id         The id of the entity
+     * @param property   The property to get requested
      */
     private void checkGetPropertyValueOfEntity(EntityType entityType, long id, String property) {
         Map<String, Object> responseMap = getEntity(entityType, id, property + "/$value");
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
-        Assert.assertEquals(responseCode, 200, "Reading property value of \"" + property + "\" of the existing " + entityType.name() + " with id " + id + " failed.");
+        Assert.assertEquals(responseCode, 200, "Reading property value of \"" + property + "\" of the exitixting " + entityType.name() + " with id " + id + " failed.");
         String response = responseMap.get("response").toString();
         if (!property.equals("location") && !property.equals("feature") && !property.equals("unitOfMeasurement")) {
             Assert.assertEquals(response.indexOf("{"), -1, "Reading property value of \"" + property + "\"of \"" + entityType + "\" fails.");
@@ -271,8 +271,8 @@ public class Capability1Tests {
      * confirms that the response is 200.
      *
      * @param entityTypes List of entity type from EntityType enum list for the
-     * chain
-     * @param ids List of ids for teh chain
+     *                    chain
+     * @param ids         List of ids for teh chain
      */
     private void readRelatedEntity(List<String> entityTypes, List<Long> ids) {
         if (entityTypes.size() > resourcePathLevel) {
@@ -316,10 +316,10 @@ public class Capability1Tests {
      * This method is checking the response for the request of Association Link.
      * It confirms that it contains a list of selfLinks.
      *
-     * @param response The response for GET association link request
+     * @param response    The response for GET association link request
      * @param entityTypes List of entity type from EntityType enum list for the
-     * chain
-     * @param ids List of ids for teh chain
+     *                    chain
+     * @param ids         List of ids for teh chain
      */
     private void checkAssociationLinks(String response, List<String> entityTypes, List<Long> ids) {
 
@@ -489,8 +489,8 @@ public class Capability1Tests {
      * This helper method is sending Get request to a specific entity
      *
      * @param entityType Entity type from EntityType enum list
-     * @param id The if of the specific entity
-     * @param property The requested property of the entity
+     * @param id         The if of the specific entity
+     * @param property   The requested property of the entity
      * @return The response-code and response (body) of the request in Map
      * format.
      */
@@ -507,7 +507,7 @@ public class Capability1Tests {
      * collection in all aspects.
      *
      * @param entityType Entity type from EntityType enum list
-     * @param response The response of the GET request to be checked
+     * @param response   The response of the GET request to be checked
      */
     private void checkEntitiesAllAspectsForResponse(EntityType entityType, String response) {
         checkEntitiesControlInformation(response);
@@ -520,7 +520,7 @@ public class Capability1Tests {
      * specific entity in all aspects.
      *
      * @param entityType Entity type from EntityType enum list
-     * @param response The response of the GET request to be checked
+     * @param response   The response of the GET request to be checked
      */
     private void checkEntityAllAspectsForResponse(EntityType entityType, String response) {
         checkEntityControlInformation(response);
@@ -580,7 +580,7 @@ public class Capability1Tests {
      * for a collection
      *
      * @param entityType Entity type from EntityType enum list
-     * @param response The response of the GET request to be checked
+     * @param response   The response of the GET request to be checked
      */
     private void checkEntitiesProperties(EntityType entityType, String response) {
         try {
@@ -617,7 +617,7 @@ public class Capability1Tests {
      * for a specific entity
      *
      * @param entityType Entity type from EntityType enum list
-     * @param response The response of the GET request to be checked
+     * @param response   The response of the GET request to be checked
      */
     private void checkEntityProperties(EntityType entityType, Object response) {
         try {
@@ -642,7 +642,7 @@ public class Capability1Tests {
      * for a collection
      *
      * @param entityType Entity type from EntityType enum list
-     * @param response The response of the GET request to be checked
+     * @param response   The response of the GET request to be checked
      */
     private void checkEntitiesRelations(EntityType entityType, String response) {
         try {
@@ -666,7 +666,7 @@ public class Capability1Tests {
      * for a specific entity
      *
      * @param entityType Entity type from EntityType enum list
-     * @param response The response of the GET request to be checked
+     * @param response   The response of the GET request to be checked
      */
     private void checkEntityRelations(EntityType entityType, Object response) {
         try {
