@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,7 +29,7 @@ public class Capability2Tests {
     /**
      * The root URL of the SensorThings service under the test
      */
-    public String rootUri;//="http://192.168.1.13:8080/OGCSensorThings/v1.0";
+    public String rootUri;//="http://localhost:8080/OGCSensorThings/v1.0";
 
     /**
      * The list of ids for all the Things created during test procedure (will be
@@ -76,7 +77,7 @@ public class Capability2Tests {
      * class. It cleans the database to start test.
      *
      * @param testContext The test context to find out whether this class is
-     * requested to test or not
+     *                    requested to test or not
      */
     @BeforeClass
     public void obtainTestSubject(ITestContext testContext) {
@@ -105,9 +106,7 @@ public class Capability2Tests {
     @Test(description = "POST Entities", groups = "level-2", priority = 2)
     public void createEntities() {
         try {
-            /**
-             * Thing *
-             */
+            /* Thing */
             String urlParameters = "{"
                     + "\"name\":\"Test Thing\","
                     + "\"description\":\"This is a Test Thing From TestNG\""
@@ -116,9 +115,7 @@ public class Capability2Tests {
             long thingId = entity.getLong(ControlInformation.ID);
             thingIds.add(thingId);
 
-            /**
-             * Location *
-             */
+            /* Location */
             urlParameters = "{\n"
                     + "  \"name\": \"bow river\",\n"
                     + "  \"description\": \"bow river\",\n"
@@ -130,22 +127,18 @@ public class Capability2Tests {
             locationIds.add(locationId);
             JSONObject locationEntity = entity;
 
-            /**
-             * Sensor *
-             */
+            /* Sensor */
             urlParameters = "{\n"
                     + "  \"name\": \"Fuguro Barometer\",\n"
                     + "  \"description\": \"Fuguro Barometer\",\n"
-                    + "  \"encodingType\": \"http://schema.org/description\",\n"
+                    + "  \"encodingType\": \"application/pdf\",\n"
                     + "  \"metadata\": \"Barometer\"\n"
                     + "}";
             entity = postEntity(EntityType.SENSOR, urlParameters);
             long sensorId = entity.getLong(ControlInformation.ID);
             sensorIds.add(sensorId);
 
-            /**
-             * ObservedProperty *
-             */
+            /* ObservedProperty */
             urlParameters = "{\n"
                     + "  \"name\": \"DewPoint Temperature\",\n"
                     + "  \"definition\": \"http://dbpedia.org/page/Dew_point\",\n"
@@ -155,9 +148,7 @@ public class Capability2Tests {
             long obsPropId = entity.getLong(ControlInformation.ID);
             obsPropIds.add(obsPropId);
 
-            /**
-             * FeatureOfInterest *
-             */
+            /* FeatureOfInterest */
             urlParameters = "{\n"
                     + "  \"name\": \"A weather station.\",\n"
                     + "  \"description\": \"A weather station.\",\n"
@@ -174,9 +165,7 @@ public class Capability2Tests {
             long foiId = entity.getLong(ControlInformation.ID);
             foiIds.add(foiId);
 
-            /**
-             * Datastream *
-             */
+            /* Datastream */
             urlParameters = "{\n"
                     + "  \"unitOfMeasurement\": {\n"
                     + "    \"name\": \"Celsius\",\n"
@@ -194,9 +183,7 @@ public class Capability2Tests {
             long datastreamId = entity.getLong(ControlInformation.ID);
             datastreamIds.add(datastreamId);
 
-            /**
-             * Observation *
-             */
+            /* Observation */
             urlParameters = "{\n"
                     + "  \"phenomenonTime\": \"2015-03-01T00:40:00.000Z\",\n"
                     + "  \"result\": 8,\n"
@@ -243,9 +230,7 @@ public class Capability2Tests {
             observationIds.add(obsId3);
             checkAutomaticInsertionOfFOI(obsId2, locationEntity, automatedFOIId);
 
-            /**
-             * HistoricalLocation *
-             */
+            /* HistoricalLocation */
             urlParameters = "{\n"
                     + "  \"time\": \"2015-03-01T00:40:00.000Z\",\n"
                     + "  \"Thing\":{\"@iot.id\": " + thingId + "},\n"
@@ -270,9 +255,7 @@ public class Capability2Tests {
     @Test(description = "POST Entities using Deep Insert", groups = "level-2", priority = 2)
     public void createEntitiesWithDeepInsert() {
         try {
-            /**
-             * Thing *
-             */
+            /* Thing */
             String urlParameters = "{\n"
                     + "  \"name\": \"Office Building\",\n"
                     + "  \"description\": \"Office Building\",\n"
@@ -305,7 +288,7 @@ public class Capability2Tests {
                     + "      \"Sensor\": {        \n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "      }\n"
                     + "    }\n"
@@ -338,7 +321,7 @@ public class Capability2Tests {
             deepInsertedObj = new JSONObject("{\n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "      }\n");
             sensorIds.add(checkRelatedEntity(EntityType.DATASTREAM, datastreamId, EntityType.SENSOR, deepInsertedObj));
@@ -351,9 +334,7 @@ public class Capability2Tests {
             obsPropIds.add(checkRelatedEntity(EntityType.DATASTREAM, datastreamId, EntityType.OBSERVED_PROPERTY, deepInsertedObj));
             thingIds.add(thingId);
 
-            /**
-             * Datastream *
-             */
+            /* Datastream */
             urlParameters = "{\n"
                     + "  \"unitOfMeasurement\": {\n"
                     + "    \"name\": \"Celsius\",\n"
@@ -372,7 +353,7 @@ public class Capability2Tests {
                     + "   \"Sensor\": {        \n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "   },\n"
                     + "      \"Observations\": [\n"
@@ -388,7 +369,7 @@ public class Capability2Tests {
             deepInsertedObj = new JSONObject("{\n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "      }\n");
             sensorIds.add(checkRelatedEntity(EntityType.DATASTREAM, datastreamId, EntityType.SENSOR, deepInsertedObj));
@@ -407,9 +388,7 @@ public class Capability2Tests {
             observationIds.add(checkRelatedEntity(EntityType.DATASTREAM, datastreamId, EntityType.OBSERVATION, deepInsertedObj));
             datastreamIds.add(datastreamId);
 
-            /**
-             * Observation *
-             */
+            /* Observation */
             urlParameters = "{\n"
                     + "  \"phenomenonTime\": \"2015-03-01T00:00:00Z\",\n"
                     + "  \"result\": 100,\n"
@@ -501,9 +480,7 @@ public class Capability2Tests {
             entityTypesToCheck.add(EntityType.OBSERVED_PROPERTY);
             checkNotExisting(entityTypesToCheck);
 
-            /**
-             * Datastream *
-             */
+            /* Datastream */
             urlParameters = "{"
                     + "\"name\": \"Office Building\","
                     + "\"description\": \"Office Building\""
@@ -547,7 +524,7 @@ public class Capability2Tests {
                     + "   \"Sensor\": {        \n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "   },\n"
                     + "      \"Observations\": [\n"
@@ -576,7 +553,7 @@ public class Capability2Tests {
                     + "   \"Sensor\": {        \n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "   },\n"
                     + "      \"Observations\": [\n"
@@ -621,9 +598,7 @@ public class Capability2Tests {
             entityTypesToCheck.add(EntityType.OBSERVED_PROPERTY);
             checkNotExisting(entityTypesToCheck);
 
-            /**
-             * Observation *
-             */
+            /* Observation */
             urlParameters = "{\n"
                     + "  \"unitOfMeasurement\": {\n"
                     + "    \"name\": \"Celsius\",\n"
@@ -642,7 +617,7 @@ public class Capability2Tests {
                     + "   \"Sensor\": {        \n"
                     + "        \"name\": \"Acme Fluxomatic 1000\",\n"
                     + "        \"description\": \"Acme Fluxomatic 1000\",\n"
-                    + "        \"encodingType\": \"http://schema.org/description\",\n"
+                    + "        \"encodingType\": \"application/pdf\",\n"
                     + "        \"metadata\": \"Light flux sensor\"\n"
                     + "   }\n"
                     + "}";
@@ -693,9 +668,7 @@ public class Capability2Tests {
     @Test(description = "POST Invalid Entities", groups = "level-2", priority = 3)
     public void createInvalidEntities() {
         try {
-            /**
-             * Datastream *
-             */
+            /* Datastream */
             // Without Sensor
             String urlParameters = "{\n"
                     + "  \"unitOfMeasurement\": {\n"
@@ -739,9 +712,7 @@ public class Capability2Tests {
                     + "}";
             postInvalidEntity(EntityType.DATASTREAM, urlParameters);
 
-            /**
-             * Observation *
-             */
+            /* Observation */
             //Create Thing and Datastream
             urlParameters = "{"
                     + "\"name\":\"This is a Test Thing From TestNG\","
@@ -794,9 +765,7 @@ public class Capability2Tests {
     @Test(description = "PATCH Entities", groups = "level-2", priority = 4)
     public void patchEntities() {
         try {
-            /**
-             * Thing *
-             */
+            /* Thing */
             long thingId = thingIds.get(0);
             JSONObject entity = getEntity(EntityType.THING, thingId);
             String urlParameters = "{\"description\":\"This is a PATCHED Test Thing From TestNG\"}";
@@ -805,9 +774,7 @@ public class Capability2Tests {
             JSONObject updatedEntity = patchEntity(EntityType.THING, urlParameters, thingId);
             checkPatch(EntityType.THING, entity, updatedEntity, diffs);
 
-            /**
-             * Location *
-             */
+            /* Location */
             long locationId = locationIds.get(0);
             entity = getEntity(EntityType.LOCATION, locationId);
             urlParameters = "{\"location\": { \"type\": \"Point\", \"coordinates\": [114.05, -50] }}";
@@ -816,9 +783,7 @@ public class Capability2Tests {
             updatedEntity = patchEntity(EntityType.LOCATION, urlParameters, locationId);
             checkPatch(EntityType.LOCATION, entity, updatedEntity, diffs);
 
-            /**
-             * HistoricalLocation *
-             */
+            /* HistoricalLocation */
             long histLocId = historicalLocationIds.get(0);
             entity = getEntity(EntityType.HISTORICAL_LOCATION, histLocId);
             urlParameters = "{\"time\": \"2015-07-01T00:00:00.000Z\"}";
@@ -827,9 +792,7 @@ public class Capability2Tests {
             updatedEntity = patchEntity(EntityType.HISTORICAL_LOCATION, urlParameters, histLocId);
             checkPatch(EntityType.HISTORICAL_LOCATION, entity, updatedEntity, diffs);
 
-            /**
-             * Sensor *
-             */
+            /* Sensor */
             long sensorId = sensorIds.get(0);
             entity = getEntity(EntityType.SENSOR, sensorId);
             urlParameters = "{\"metadata\": \"PATCHED\"}";
@@ -838,9 +801,7 @@ public class Capability2Tests {
             updatedEntity = patchEntity(EntityType.SENSOR, urlParameters, sensorId);
             checkPatch(EntityType.SENSOR, entity, updatedEntity, diffs);
 
-            /**
-             * ObserverdProperty *
-             */
+            /* ObserverdProperty */
             long obsPropId = obsPropIds.get(0);
             entity = getEntity(EntityType.OBSERVED_PROPERTY, obsPropId);
             urlParameters = "{\"description\":\"PATCHED\"}";
@@ -849,9 +810,7 @@ public class Capability2Tests {
             updatedEntity = patchEntity(EntityType.OBSERVED_PROPERTY, urlParameters, obsPropId);
             checkPatch(EntityType.OBSERVED_PROPERTY, entity, updatedEntity, diffs);
 
-            /**
-             * FeatureOfInterest *
-             */
+            /* FeatureOfInterest */
             long foiId = foiIds.get(0);
             entity = getEntity(EntityType.FEATURE_OF_INTEREST, foiId);
             urlParameters = "{\"feature\":{ \"type\": \"Point\", \"coordinates\": [114.05, -51.05] }}";
@@ -860,9 +819,7 @@ public class Capability2Tests {
             updatedEntity = patchEntity(EntityType.FEATURE_OF_INTEREST, urlParameters, foiId);
             checkPatch(EntityType.FEATURE_OF_INTEREST, entity, updatedEntity, diffs);
 
-            /**
-             * Datastream *
-             */
+            /* Datastream */
             long datastreamId = datastreamIds.get(0);
             entity = getEntity(EntityType.DATASTREAM, datastreamId);
             urlParameters = "{\"description\": \"Patched Description\"}";
@@ -882,9 +839,7 @@ public class Capability2Tests {
             updatedEntity = patchEntity(EntityType.DATASTREAM, urlParameters, datastreamId);
             checkPatch(EntityType.DATASTREAM, entity, updatedEntity, diffs);
 
-            /**
-             * Observation *
-             */
+            /* Observation */
             long obsId1 = observationIds.get(0);
             entity = getEntity(EntityType.OBSERVATION, obsId1);
             urlParameters = "{\"phenomenonTime\": \"2015-07-01T00:40:00.000Z\"}";
@@ -907,9 +862,7 @@ public class Capability2Tests {
     @Test(description = "PUT Entities", groups = "level-2", priority = 4)
     public void putEntities() {
         try {
-            /**
-             * Thing *
-             */
+            /* Thing */
             long thingId = thingIds.get(0);
             JSONObject entity = getEntity(EntityType.THING, thingId);
             String urlParameters = "{"
@@ -922,27 +875,22 @@ public class Capability2Tests {
             JSONObject updatedEntity = updateEntity(EntityType.THING, urlParameters, thingId);
             checkPut(EntityType.THING, entity, updatedEntity, diffs);
 
-            /**
-             * Location *
-             */
+            /* Location */
             long locationId = locationIds.get(0);
             entity = getEntity(EntityType.LOCATION, locationId);
             urlParameters = "{"
-                    + "\"encodingType\":\"UPDATED ENCODING\","
+                    + "\"encodingType\":\"application/vnd.geo+json\","
                     + "\"name\":\"UPDATED NAME\","
                     + "\"description\":\"UPDATED DESCRIPTION\","
                     + "\"location\": { \"type\": \"Point\", \"coordinates\": [-114.05, 50] }}";
             diffs = new HashMap<>();
-            diffs.put("encodingType", "UPDATED ENCODING");
             diffs.put("name", "UPDATED NAME");
             diffs.put("description", "UPDATED DESCRIPTION");
             diffs.put("location", new JSONObject("{ \"type\": \"Point\", \"coordinates\": [-114.05, 50] }}"));
             updatedEntity = updateEntity(EntityType.LOCATION, urlParameters, locationId);
             checkPut(EntityType.LOCATION, entity, updatedEntity, diffs);
 
-            /**
-             * HistoricalLocation *
-             */
+            /* HistoricalLocation */
             long histLocId = historicalLocationIds.get(0);
             entity = getEntity(EntityType.HISTORICAL_LOCATION, histLocId);
             urlParameters = "{\"time\": \"2015-08-01T00:00:00.000Z\"}";
@@ -951,27 +899,22 @@ public class Capability2Tests {
             updatedEntity = updateEntity(EntityType.HISTORICAL_LOCATION, urlParameters, histLocId);
             checkPut(EntityType.HISTORICAL_LOCATION, entity, updatedEntity, diffs);
 
-            /**
-             * Sensor *
-             */
+            /* Sensor */
             long sensorId = sensorIds.get(0);
             entity = getEntity(EntityType.SENSOR, sensorId);
             urlParameters = "{"
                     + "\"name\": \"UPDATED\", "
                     + "\"description\": \"UPDATED\", "
-                    + "\"encodingType\":\"http://schema.org/description\", "
+                    + "\"encodingType\":\"application/pdf\", "
                     + "\"metadata\": \"UPDATED\"}";
             diffs = new HashMap<>();
             diffs.put("name", "UPDATED");
             diffs.put("description", "UPDATED");
-            diffs.put("encodingType", "http://schema.org/description");
             diffs.put("metadata", "UPDATED");
             updatedEntity = updateEntity(EntityType.SENSOR, urlParameters, sensorId);
             checkPut(EntityType.SENSOR, entity, updatedEntity, diffs);
 
-            /**
-             * ObserverdProperty *
-             */
+            /* ObserverdProperty */
             long obsPropId = obsPropIds.get(0);
             urlParameters = "{"
                     + "\"name\":\"QWERTY\", "
@@ -987,28 +930,23 @@ public class Capability2Tests {
             updatedEntity = updateEntity(EntityType.OBSERVED_PROPERTY, urlParameters, obsPropId);
             checkPut(EntityType.OBSERVED_PROPERTY, entity, updatedEntity, diffs);
 
-            /**
-             * FeatureOfInterest *
-             */
+            /* FeatureOfInterest */
             long foiId = foiIds.get(0);
             entity = getEntity(EntityType.FEATURE_OF_INTEREST, foiId);
             urlParameters = "{"
-                    + "\"encodingType\":\"SQUARE\","
+                    + "\"encodingType\":\"application/vnd.geo+json\","
                     + "\"feature\":{ \"type\": \"Point\", \"coordinates\": [-114.05, 51.05] }, "
                     + "\"description\":\"POIUYTREW\","
                     + "\"name\":\"POIUYTREW\""
                     + "}";
             diffs = new HashMap<>();
-            diffs.put("encodingType", "SQUARE");
             diffs.put("feature", new JSONObject("{ \"type\": \"Point\", \"coordinates\": [-114.05, 51.05] }"));
             diffs.put("name", "POIUYTREW");
             diffs.put("description", "POIUYTREW");
             updatedEntity = updateEntity(EntityType.FEATURE_OF_INTEREST, urlParameters, foiId);
             checkPut(EntityType.FEATURE_OF_INTEREST, entity, updatedEntity, diffs);
 
-            /**
-             * Datastream *
-             */
+            /* Datastream */
             long datastreamId = datastreamIds.get(0);
             entity = getEntity(EntityType.DATASTREAM, datastreamId);
             urlParameters = "{\n"
@@ -1029,9 +967,7 @@ public class Capability2Tests {
             updatedEntity = updateEntity(EntityType.DATASTREAM, urlParameters, datastreamId);
             checkPut(EntityType.DATASTREAM, entity, updatedEntity, diffs);
 
-            /**
-             * Observation *
-             */
+            /* Observation */
             long obsId1 = observationIds.get(0);
             entity = getEntity(EntityType.OBSERVATION, obsId1);
             urlParameters = "{\"result\": \"99\", \"phenomenonTime\": \"2015-08-01T00:40:00.000Z\"}";
@@ -1219,6 +1155,7 @@ public class Capability2Tests {
     }
 
     //TODO: Add invalid PATCH test for other entities when it is implemented in the service
+
     /**
      * This method is testing invalid partial update or PATCH. The PATCH request
      * is invalid if the body contains related entities as inline content.
@@ -1303,7 +1240,7 @@ public class Capability2Tests {
         urlParameters = "{\"Sensor\": {\n"
                 + "  \t\"name\": \"Acme Traffic 2000\",  \n"
                 + "  \t\"description\": \"Acme Traffic 2000\",  \n"
-                + "  \t\"encodingType\": \"http://schema.org/description\",\n"
+                + "  \t\"encodingType\": \"application/pdf\",\n"
                 + "  \t\"metadata\": \"Traffic counting device\"\n"
                 + "  }}";
         invalidPatchEntity(EntityType.DATASTREAM, urlParameters, datastreamId);
@@ -1350,7 +1287,7 @@ public class Capability2Tests {
      * then send a GET request to that URL.
      *
      * @param entityType Entity type in from EntityType enum
-     * @param id The id of requested entity
+     * @param id         The id of requested entity
      * @return The requested entity in the format of JSON Object.
      */
     private JSONObject getEntity(EntityType entityType, long id) {
@@ -1371,7 +1308,7 @@ public class Capability2Tests {
      * This method created the URL string for the entity and then POST the
      * entity with urlParameters to that URL.
      *
-     * @param entityType Entity type in from EntityType enum
+     * @param entityType    Entity type in from EntityType enum
      * @param urlParameters POST body
      * @return The created entity in the form of JSON Object
      */
@@ -1402,7 +1339,7 @@ public class Capability2Tests {
      * This helper method is sending invalid POST request and confirm that the
      * response is correct based on specification.
      *
-     * @param entityType Entity type in from EntityType enum
+     * @param entityType    Entity type in from EntityType enum
      * @param urlParameters POST body (invalid)
      */
     private void postInvalidEntity(EntityType entityType, String urlParameters) {
@@ -1419,7 +1356,7 @@ public class Capability2Tests {
      * then send DELETE request to that URl.
      *
      * @param entityType Entity type in from EntityType enum
-     * @param id The id of requested entity
+     * @param id         The id of requested entity
      */
     private void deleteEntity(EntityType entityType, long id) {
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, null, null);
@@ -1452,9 +1389,9 @@ public class Capability2Tests {
      * This method created the URL string for the entity with specific idand
      * then PUT the entity with urlParameters to that URL.
      *
-     * @param entityType Entity type in from EntityType enum
+     * @param entityType    Entity type in from EntityType enum
      * @param urlParameters The PUT body
-     * @param id The id of requested entity
+     * @param id            The id of requested entity
      * @return The updated entity in the format of JSON Object
      */
     private JSONObject updateEntity(EntityType entityType, String urlParameters, long id) {
@@ -1479,9 +1416,9 @@ public class Capability2Tests {
      * This method created the URL string for the entity with specific id and
      * then PATCH the entity with urlParameters to that URL.
      *
-     * @param entityType Entity type in from EntityType enum
+     * @param entityType    Entity type in from EntityType enum
      * @param urlParameters The PATCH body
-     * @param id The id of requested entity
+     * @param id            The id of requested entity
      * @return The patched entity in the format of JSON Object
      */
     private JSONObject patchEntity(EntityType entityType, String urlParameters, long id) {
@@ -1507,9 +1444,9 @@ public class Capability2Tests {
      * then PATCH invalid entity with urlParameters to that URL and confirms
      * that the response is correct based on specification.
      *
-     * @param entityType Entity type in from EntityType enum
+     * @param entityType    Entity type in from EntityType enum
      * @param urlParameters The PATCH body (invalid)
-     * @param id The id of requested entity
+     * @param id            The id of requested entity
      */
     private void invalidPatchEntity(EntityType entityType, String urlParameters, long id) {
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, null, null);
@@ -1524,10 +1461,10 @@ public class Capability2Tests {
      * Check the patched entity properties are updates correctly
      *
      * @param entityType Entity type in from EntityType enum
-     * @param oldEntity The old properties of the patched entity
-     * @param newEntity The updated properties of the patched entity
-     * @param diffs The properties that supposed to be updated besed on the
-     * request due to the specification
+     * @param oldEntity  The old properties of the patched entity
+     * @param newEntity  The updated properties of the patched entity
+     * @param diffs      The properties that supposed to be updated besed on the
+     *                   request due to the specification
      */
     private void checkPatch(EntityType entityType, JSONObject oldEntity, JSONObject newEntity, Map diffs) {
         try {
@@ -1548,10 +1485,10 @@ public class Capability2Tests {
      * Check the updated entity properties are updates correctly
      *
      * @param entityType Entity type in from EntityType enum
-     * @param oldEntity The old properties of the updated entity
-     * @param newEntity The updated properties of the updated entity
-     * @param diffs The properties that supposed to be updated based on the
-     * request due to the specification
+     * @param oldEntity  The old properties of the updated entity
+     * @param newEntity  The updated properties of the updated entity
+     * @param diffs      The properties that supposed to be updated based on the
+     *                   request due to the specification
      */
     private void checkPut(EntityType entityType, JSONObject oldEntity, JSONObject newEntity, Map diffs) {
         try {
@@ -1573,9 +1510,9 @@ public class Capability2Tests {
      * Check the FeatureOfInterest is created automatically correctly if not
      * inserted in Observation
      *
-     * @param obsId The observation id
-     * @param locationObj The Location object that the FOI is supposed to be
-     * created based on that
+     * @param obsId         The observation id
+     * @param locationObj   The Location object that the FOI is supposed to be
+     *                      created based on that
      * @param expectedFOIId The id of the FOI linked to the Observation
      * @return The id of FOI
      */
@@ -1602,10 +1539,10 @@ public class Capability2Tests {
     /**
      * Check the related entity of a given entity
      *
-     * @param parentEntityType The given entity type
-     * @param parentId The given entity id
+     * @param parentEntityType   The given entity type
+     * @param parentId           The given entity id
      * @param relationEntityType The relation entity type
-     * @param relationObj The expected related entity object
+     * @param relationObj        The expected related entity object
      * @return The id of related object
      */
     private long checkRelatedEntity(EntityType parentEntityType, long parentId, EntityType relationEntityType, JSONObject relationObj) {
@@ -1639,7 +1576,7 @@ public class Capability2Tests {
     /**
      * Check the Observation have the resultTime even if it is null
      *
-     * @param observation The observation JSON object
+     * @param observation     The observation JSON object
      * @param resultTimeValue The expected value of resultTime
      */
     private void checkForObservationResultTime(JSONObject observation, String resultTimeValue) {
@@ -1791,7 +1728,7 @@ public class Capability2Tests {
                     + "            \"Sensor\": {\n"
                     + "                \"name\": \"sensor 1\",\n"
                     + "                \"description\": \"sensor 1\",\n"
-                    + "                \"encodingType\": \"http://schema.org/description\",\n"
+                    + "                \"encodingType\": \"application/pdf\",\n"
                     + "                \"metadata\": \"Light flux sensor\"\n"
                     + "            }\n"
                     + "        }\n"
