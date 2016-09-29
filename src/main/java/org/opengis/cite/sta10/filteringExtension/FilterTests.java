@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.geojson.LineString;
 import org.geojson.LngLatAlt;
 import org.geojson.Point;
 import org.geojson.Polygon;
@@ -169,6 +170,30 @@ public class FilterTests {
         service.create(location);
         LOCATIONS.add(location);
 
+        // Locations 5
+        location = new Location("Location 5", "A line.", "application/vnd.geo+json",
+                new LineString(
+                        new LngLatAlt(5, 52),
+                        new LngLatAlt(5, 53)));
+        service.create(location);
+        LOCATIONS.add(location);
+
+        // Locations 6
+        location = new Location("Location 6", "A longer line.", "application/vnd.geo+json",
+                new LineString(
+                        new LngLatAlt(5, 52),
+                        new LngLatAlt(6, 53)));
+        service.create(location);
+        LOCATIONS.add(location);
+
+        // Locations 7
+        location = new Location("Location 7", "The longest line.", "application/vnd.geo+json",
+                new LineString(
+                        new LngLatAlt(4, 52),
+                        new LngLatAlt(8, 52)));
+        service.create(location);
+        LOCATIONS.add(location);
+
         Sensor sensor = new Sensor("Sensor 1", "The first sensor.", "text", "Some metadata.");
         service.create(sensor);
         SENSORS.add(sensor);
@@ -277,7 +302,17 @@ public class FilterTests {
 
     @Test(description = "", groups = "level-3")
     public void testGeoIntersects() throws ServiceFailureException {
-        filterAndCheck(service.locations(), "geo.intersects(location, geography'LINESTRING(7.5 51, 7.5 54)')", getFromList(LOCATIONS, 4));
+        filterAndCheck(service.locations(), "geo.intersects(location, geography'LINESTRING(7.5 51, 7.5 54)')", getFromList(LOCATIONS, 4, 7));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testGeoLength() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "geo.length(location) gt 1", getFromList(LOCATIONS, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) ge 1", getFromList(LOCATIONS, 5, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) eq 1", getFromList(LOCATIONS, 5));
+        filterAndCheck(service.locations(), "geo.length(location) ne 1", getFromList(LOCATIONS, 0, 1, 2, 3, 4, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) le 4", getFromList(LOCATIONS, 0, 1, 2, 3, 4, 5, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) lt 4", getFromList(LOCATIONS, 0, 1, 2, 3, 4, 5, 6));
     }
 
     @Test(description = "", groups = "level-3")
@@ -287,12 +322,12 @@ public class FilterTests {
 
     @Test(description = "", groups = "level-3")
     public void testStCrosses() throws ServiceFailureException {
-        filterAndCheck(service.locations(), "st_crosses(geography'LINESTRING(7.5 51.5, 7.5 53.5)', location)", getFromList(LOCATIONS, 4));
+        filterAndCheck(service.locations(), "st_crosses(geography'LINESTRING(7.5 51.5, 7.5 53.5)', location)", getFromList(LOCATIONS, 4, 7));
     }
 
     @Test(description = "", groups = "level-3")
     public void testStDisjoint() throws ServiceFailureException {
-        filterAndCheck(service.locations(), "st_disjoint(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location)", getFromList(LOCATIONS, 0, 3));
+        filterAndCheck(service.locations(), "st_disjoint(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location)", getFromList(LOCATIONS, 0, 3, 5, 6));
     }
 
     @Test(description = "", groups = "level-3")
@@ -302,7 +337,7 @@ public class FilterTests {
 
     @Test(description = "", groups = "level-3")
     public void testStIntersects() throws ServiceFailureException {
-        filterAndCheck(service.locations(), "st_intersects(location, geography'LINESTRING(7.5 51, 7.5 54)')", getFromList(LOCATIONS, 4));
+        filterAndCheck(service.locations(), "st_intersects(location, geography'LINESTRING(7.5 51, 7.5 54)')", getFromList(LOCATIONS, 4, 7));
     }
 
     @Test(description = "", groups = "level-3")
@@ -312,7 +347,7 @@ public class FilterTests {
 
     @Test(description = "", groups = "level-3")
     public void testStRelate() throws ServiceFailureException {
-        filterAndCheck(service.locations(), "st_relate(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location, 'T********')", getFromList(LOCATIONS, 1, 2, 4));
+        filterAndCheck(service.locations(), "st_relate(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location, 'T********')", getFromList(LOCATIONS, 1, 2, 4, 7));
     }
 
     @Test(description = "", groups = "level-3")

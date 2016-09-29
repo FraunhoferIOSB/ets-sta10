@@ -114,10 +114,10 @@ public class EntityUtils {
         int count = 0;
         while (more) {
             EntityList<T> entities = doa.query().list();
-            if (entities.getCount() == 0) {
-                more = false;
-            } else {
+            if (entities.getCount() > 0) {
                 LOGGER.info("{} to go.", entities.getCount());
+            } else {
+                more = false;
             }
             for (T entity : entities) {
                 doa.delete(entity);
