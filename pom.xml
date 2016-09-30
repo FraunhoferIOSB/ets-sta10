@@ -58,9 +58,9 @@
             <url>https://repo.eclipse.org/content/repositories/paho-snapshots/</url>
         </repository>
         <repository>
-            <!-- Jitpack autogenerates maven packages from github projects -->
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
+            <id>bintray-fraunhoferiosb-Maven</id>
+            <name>bintray</name>
+            <url>http://dl.bintray.com/fraunhoferiosb/Maven</url>
         </repository>
     </repositories>
 
@@ -111,13 +111,9 @@
             <version>1.1.3</version>
         </dependency>
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.FraunhoferIOSB</groupId>
+            <groupId>de.fraunhofer.iosb.ilt</groupId>
             <artifactId>SensorThingsClient</artifactId>
-            <version>master-SNAPSHOT</version>
+            <version>0.1</version>
         </dependency>
     </dependencies>
 

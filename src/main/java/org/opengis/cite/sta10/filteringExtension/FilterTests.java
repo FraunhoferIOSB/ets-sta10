@@ -30,8 +30,10 @@ import de.fraunhofer.iosb.ilt.sta.model.Thing;
 import de.fraunhofer.iosb.ilt.sta.model.ext.EntityList;
 import de.fraunhofer.iosb.ilt.sta.model.ext.UnitOfMeasurement;
 import de.fraunhofer.iosb.ilt.sta.service.SensorThingsService;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -94,12 +96,12 @@ public class FilterTests {
         if (rootUri.lastIndexOf('/') == rootUri.length() - 1) {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
-        URI uri;
+        URL url;
         try {
-            uri = new URI(rootUri);
-            service = new SensorThingsService(uri);
+            url = new URL(rootUri);
+            service = new SensorThingsService(url);
             createEntities();
-        } catch (URISyntaxException ex) {
+        } catch (MalformedURLException | URISyntaxException ex) {
             LOGGER.error("Failed to create service uri.", ex);
         } catch (ServiceFailureException ex) {
             LOGGER.error("Failed to create entities.", ex);
