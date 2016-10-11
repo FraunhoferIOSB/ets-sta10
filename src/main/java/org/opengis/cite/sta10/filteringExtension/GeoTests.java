@@ -18,8 +18,6 @@ package org.opengis.cite.sta10.filteringExtension;
 
 import de.fraunhofer.iosb.ilt.sta.ServiceFailureException;
 import de.fraunhofer.iosb.ilt.sta.dao.BaseDao;
-import de.fraunhofer.iosb.ilt.sta.dao.ObservationDao;
-import de.fraunhofer.iosb.ilt.sta.dao.ThingDao;
 import de.fraunhofer.iosb.ilt.sta.model.Datastream;
 import de.fraunhofer.iosb.ilt.sta.model.Entity;
 import de.fraunhofer.iosb.ilt.sta.model.Location;
@@ -61,12 +59,12 @@ import org.threeten.extra.Interval;
  *
  * @author Hylke van der Schaaf
  */
-public class FilterTests {
+public class GeoTests {
 
     /**
      * The logger for this class.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(FilterTests.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeoTests.class);
     private String rootUri;
     private SensorThingsService service;
     private final List<Thing> THINGS = new ArrayList<>();
@@ -76,7 +74,7 @@ public class FilterTests {
     private final List<Datastream> DATASTREAMS = new ArrayList<>();
     private final List<Observation> OBSERVATIONS = new ArrayList<>();
 
-    public FilterTests() {
+    public GeoTests() {
     }
 
     @BeforeClass()
@@ -247,28 +245,69 @@ public class FilterTests {
         }
     }
 
-    @Test(description = "Test indirect filters.", groups = "level-3")
-    public void testIndirectFilter() throws ServiceFailureException {
-        ThingDao doa = service.things();
-        filterAndCheck(doa, "Locations/name eq 'Location 2'", getFromList(THINGS, 1));
-        filterAndCheck(doa, "startswith(HistoricalLocations/Location/name, 'Location 1')", getFromList(THINGS, 0));
+    @Test(description = "", groups = "level-3")
+    public void testGeoDistance() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "geo.distance(location, geography'POINT(8 54.1)') lt 1", getFromList(LOCATIONS, 3));
     }
 
-    @Test(description = "Test different time interval and duration filters.", groups = "level-3")
-    public void testTimeInterval() throws ServiceFailureException {
-        ObservationDao doa = service.observations();
+    @Test(description = "", groups = "level-3")
+    public void testGeoIntersects() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "geo.intersects(location, geography'LINESTRING(7.5 51, 7.5 54)')", getFromList(LOCATIONS, 4, 7));
+    }
 
-        filterAndCheck(doa, "not validTime lt 2016-01-03T12:00:00Z and not validTime gt 2016-01-03T12:00:00Z", getFromList(OBSERVATIONS, 2));
+    @Test(description = "", groups = "level-3")
+    public void testGeoLength() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "geo.length(location) gt 1", getFromList(LOCATIONS, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) ge 1", getFromList(LOCATIONS, 5, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) eq 1", getFromList(LOCATIONS, 5));
+        filterAndCheck(service.locations(), "geo.length(location) ne 1", getFromList(LOCATIONS, 0, 1, 2, 3, 4, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) le 4", getFromList(LOCATIONS, 0, 1, 2, 3, 4, 5, 6, 7));
+        filterAndCheck(service.locations(), "geo.length(location) lt 4", getFromList(LOCATIONS, 0, 1, 2, 3, 4, 5, 6));
+    }
 
-        // Durations
-        filterAndCheck(doa, "validTime add duration'P1D' gt 2016-01-03T01:01:00Z", getFromList(OBSERVATIONS, 1, 2, 3));
-        filterAndCheck(doa, "validTime gt 2016-01-03T01:01:00Z sub duration'P1D'", getFromList(OBSERVATIONS, 1, 2, 3));
-        filterAndCheck(doa, "validTime sub duration'P1D' gt 2016-01-03T01:01:00Z", getFromList(OBSERVATIONS, 3));
+    @Test(description = "", groups = "level-3")
+    public void testStContains() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_contains(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location)", getFromList(LOCATIONS, 1, 2));
+    }
 
-        filterAndCheck(doa, "validTime lt 2016-01-02T01:01:01.000Z/2016-01-03T23:59:59.999Z add duration'P1D'", getFromList(OBSERVATIONS, 0, 1));
-        filterAndCheck(doa, "validTime gt 2016-01-02T01:01:01.000Z/2016-01-03T23:59:59.999Z sub duration'P1D'", getFromList(OBSERVATIONS, 2, 3));
+    @Test(description = "", groups = "level-3")
+    public void testStCrosses() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_crosses(geography'LINESTRING(7.5 51.5, 7.5 53.5)', location)", getFromList(LOCATIONS, 4, 7));
+    }
 
-        filterAndCheck(doa, "phenomenonTime sub 2016-01-03T01:01:01.000Z eq duration'P1D'", getFromList(OBSERVATIONS, 3));
+    @Test(description = "", groups = "level-3")
+    public void testStDisjoint() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_disjoint(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location)", getFromList(LOCATIONS, 0, 3, 5, 6));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testStEquals() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_equals(location, geography'POINT(8 53)')", getFromList(LOCATIONS, 2));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testStIntersects() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_intersects(location, geography'LINESTRING(7.5 51, 7.5 54)')", getFromList(LOCATIONS, 4, 7));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testStOverlaps() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_overlaps(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location)", getFromList(LOCATIONS, 4));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testStRelate() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_relate(geography'POLYGON((7.5 51.5, 7.5 53.5, 8.5 53.5, 8.5 51.5, 7.5 51.5))', location, 'T********')", getFromList(LOCATIONS, 1, 2, 4, 7));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testStTouches() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_touches(geography'POLYGON((8 53, 7.5 54.5, 8.5 54.5, 8 53))', location)", getFromList(LOCATIONS, 2, 4));
+    }
+
+    @Test(description = "", groups = "level-3")
+    public void testStWithin() throws ServiceFailureException {
+        filterAndCheck(service.locations(), "st_within(geography'POINT(7.5 52.75)', location)", getFromList(LOCATIONS, 4));
     }
 
     public static <T extends Entity<T>> List<T> getFromList(List<T> list, int... ids) {
