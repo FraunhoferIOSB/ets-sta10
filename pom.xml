@@ -113,7 +113,7 @@
     <dependency>
       <groupId>de.fraunhofer.iosb.ilt</groupId>
       <artifactId>SensorThingsClient</artifactId>
-      <version>0.4</version>
+      <version>0.5</version>
     </dependency>
   </dependencies>
 
