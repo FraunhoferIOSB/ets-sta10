@@ -57,6 +57,7 @@ public class Capability1Tests {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
         hasMultiDatastream = suite.getXmlSuite().getParameter("hasMultiDatastream") != null;
+        new Capability0Tests().obtainTestSubject(testContext);
     }
 
     /**
@@ -588,18 +589,6 @@ public class Capability1Tests {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
 
-    }
-
-    private int countEntitiesInResponse(String response) {
-        try {
-            JSONObject jsonResponse = new JSONObject(response);
-            JSONArray entities = jsonResponse.getJSONArray("value");
-            return entities.length();
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
-        return 0;
     }
 
     /**
