@@ -33,8 +33,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.EntityHelper;
-import org.opengis.cite.sta10.util.EntityProperties;
-import org.opengis.cite.sta10.util.EntityRelations;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.mqtt.MqttBatchResult;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
@@ -253,7 +251,7 @@ public class Capability8Test {
         createEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
-            for (String property : EntityProperties.getPropertiesListFor(entityType)) {
+            for (String property : entityType.getProperties()) {
                 Map<String, Object> propertyChange = new HashMap<>(0);
                 propertyChange.put(property, changes.get(property));
                 MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
@@ -272,7 +270,7 @@ public class Capability8Test {
         createEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
-            for (String property : EntityProperties.getPropertiesListFor(entityType)) {
+            for (String property : entityType.getProperties()) {
                 Map<String, Object> propertyChange = new HashMap<>(0);
                 propertyChange.put(property, changes.get(property));
                 MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
@@ -406,9 +404,9 @@ public class Capability8Test {
         queue.offer(new BFSStructure(sourceEntityType, ""));
         while (queue.peek() != null) {
             BFSStructure currentElement = queue.poll();
-            List<String> relations = Arrays.asList(EntityRelations.getRelationsListFor(currentElement.entityType));
+            List<String> relations = currentElement.entityType.getRelations();
             for (String relation : relations) {
-                EntityType relatedType = EntityRelations.getEntityTypeOfRelation(relation);
+                EntityType relatedType = EntityType.getForRelation(relation);
                 if (relatedType.equals(destinationEntityType)) {
                     return currentElement.path
                             + (currentElement.path.isEmpty()
@@ -423,10 +421,10 @@ public class Capability8Test {
     }
 
     private List<String> getSelectedProperties(EntityType entityType) {
-        String[] allProperties = EntityProperties.getPropertiesListFor(entityType);
-        List<String> selectedProperties = new ArrayList<>(allProperties.length / 2);
-        for (int i = 0; i < allProperties.length; i += 2) {
-            selectedProperties.add(allProperties[i]);
+        List<String> allProperties = entityType.getProperties();
+        List<String> selectedProperties = new ArrayList<>(allProperties.size() / 2);
+        for (int i = 0; i < allProperties.size(); i += 2) {
+            selectedProperties.add(allProperties.get(i));
         }
         return selectedProperties;
     }
@@ -434,7 +432,7 @@ public class Capability8Test {
     private JSONObject getSubEntityByRoot(EntityType rootEntityType, Long rootId, EntityType subtEntityType) {
         try {
             String path = getPathToRelatedEntity(subtEntityType, rootEntityType);
-            path = "/" + EntityRelations.getRootEntitySet(subtEntityType) + "?$filter=" + path + "/id%20eq%20" + rootId;
+            path = "/" + subtEntityType.getRootEntitySet() + "?$filter=" + path + "/id%20eq%20" + rootId;
             JSONObject result = entityHelper.getEntity(path);
             if (result.getInt("@iot.count") != 1) {
                 Assert.fail("Invalid result with size != 1");

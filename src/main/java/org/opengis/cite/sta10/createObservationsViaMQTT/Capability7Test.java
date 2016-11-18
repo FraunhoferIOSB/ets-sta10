@@ -27,7 +27,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.EntityHelper;
-import static org.opengis.cite.sta10.util.EntityRelations.getEntityTypeOfRelation;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
 import org.testng.Assert;
@@ -112,7 +111,7 @@ public class Capability7Test {
             String key = iterator.next().toString();
             EntityType relationType = null;
             try {
-                relationType = getEntityTypeOfRelation(key);
+                relationType = EntityType.getForRelation(key);
             } catch (IllegalArgumentException ex) {
 
             }

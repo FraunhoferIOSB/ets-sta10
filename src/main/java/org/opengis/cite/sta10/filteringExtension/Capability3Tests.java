@@ -3,14 +3,8 @@ package org.opengis.cite.sta10.filteringExtension;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
@@ -18,13 +12,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.ControlInformation;
-import org.opengis.cite.sta10.util.EntityProperties;
 import org.opengis.cite.sta10.util.EntityPropertiesSampleValue;
-import org.opengis.cite.sta10.util.EntityRelations;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.HTTPMethods;
 import org.opengis.cite.sta10.util.ServiceURLBuilder;
-import org.opengis.cite.sta10.util.Utils;
 import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
@@ -143,27 +134,6 @@ public class Capability3Tests {
         checkExpandtForEntityTypeMultilevelRelations(EntityType.OBSERVATION);
         checkExpandtForEntityTypeMultilevelRelations(EntityType.FEATURE_OF_INTEREST);
 
-    }
-
-    /**
-     * This method is testing $expand query option. It tests the combination of
-     * $select and $expand for collection of entities with 1 level and 2 levels
-     * resource path. It also tests this for one or more collections and also
-     * for multilevel.
-     */
-    @Test(description = "GET Entities with $select and $expand", groups = "level-3")
-    public void readEntitiesWithSelectAndExpandQO() {
-        for (EntityType entityType : EntityType.values()) {
-            Set<Set<String>> propertyCombinations = Utils.powerSet(new HashSet<String>(Arrays.asList(EntityProperties.getPropertiesListFor(entityType))));
-            for (Set<String> propertyCombination : propertyCombinations) {
-                List<String> selectedProperties = new ArrayList<>(propertyCombination);
-                checkSelectAndExpandForEntityType(entityType, selectedProperties);
-                checkSelectAndExpandForEntityTypeMultilevel(entityType, selectedProperties);
-            }
-            checkSelectAndExpandForEntityTypeRelations(entityType);
-            checkSelectAndExpandForEntityTypeMultilevelRelations(entityType);
-            checkExpandWithNestedSelectForEntityType(entityType);
-        }
     }
 
     /**
@@ -324,7 +294,7 @@ public class Capability3Tests {
      * @param entityType Entity type from EntityType enum list
      */
     private void checkOrderbyForEntityTypeRelations(EntityType entityType) {
-        String[] relations = EntityRelations.getRelationsListFor(entityType);
+        List<String> relations = entityType.getRelations();
         try {
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
@@ -339,8 +309,8 @@ public class Capability3Tests {
                 if (relation.charAt(relation.length() - 1) != 's' && !relation.equals("FeaturesOfInteret")) {
                     continue;
                 }
-                String[] properties = EntityProperties.getPropertiesListFor(relation);
-                EntityType relationEntityType = getEntityTypeFor(relation);
+                EntityType relationEntityType = EntityType.getForRelation(relation);
+                List<String> properties = relationEntityType.getProperties();
                 //single orderby
                 for (String property : properties) {
                     if (property.equals("unitOfMeasurement")) {
@@ -445,7 +415,7 @@ public class Capability3Tests {
      * @param entityType Entity type from EntityType enum list
      */
     private void checkOrderbyForEntityType(EntityType entityType) {
-        String[] properties = EntityProperties.getPropertiesListFor(entityType);
+        List<String> properties = entityType.getProperties();
         try {
             //single orderby
             for (String property : properties) {
@@ -703,7 +673,7 @@ public class Capability3Tests {
      */
     private void checkSkipForEntityTypeRelation(EntityType entityType) {
         try {
-            String[] relations = EntityRelations.getRelationsListFor(entityType);
+            List<String> relations = entityType.getRelations();
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             String response = responseMap.get("response").toString();
@@ -717,7 +687,7 @@ public class Capability3Tests {
                 if (relation.charAt(relation.length() - 1) != 's' && !relation.equals("FeaturesOfInterest")) {
                     continue;
                 }
-                EntityType relationEntityType = getEntityTypeFor(relation);
+                EntityType relationEntityType = EntityType.getForRelation(relation);
                 urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, relationEntityType, "?$skip=1");
                 responseMap = HTTPMethods.doGet(urlString);
                 response = responseMap.get("response").toString();
@@ -1039,7 +1009,7 @@ public class Capability3Tests {
      */
     private void checkTopForEntityTypeRelation(EntityType entityType) {
         try {
-            String[] relations = EntityRelations.getRelationsListFor(entityType);
+            List<String> relations = entityType.getRelations();
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             String response = responseMap.get("response").toString();
@@ -1053,7 +1023,7 @@ public class Capability3Tests {
                 if (relation.charAt(relation.length() - 1) != 's' && !relation.equals("FeaturesOfInterest")) {
                     continue;
                 }
-                EntityType relationEntityType = getEntityTypeFor(relation);
+                EntityType relationEntityType = EntityType.getForRelation(relation);
                 urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, relationEntityType, "?$top=3");
                 responseMap = HTTPMethods.doGet(urlString);
                 response = responseMap.get("response").toString();
@@ -1151,7 +1121,7 @@ public class Capability3Tests {
      */
     private void checkSelectForEntityType(EntityType entityType) {
         List<String> selectedProperties;
-        String[] properties = EntityProperties.getPropertiesListFor(entityType);
+        List<String> properties = entityType.getProperties();
         for (String property : properties) {
             selectedProperties = new ArrayList<>();
             selectedProperties.add(property);
@@ -1173,7 +1143,7 @@ public class Capability3Tests {
      */
     private void checkSelectForEntityTypeRelations(EntityType entityType) {
         try {
-            String[] parentRelations = EntityRelations.getRelationsListFor(entityType);
+            List<String> parentRelations = entityType.getRelations();
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             String response = responseMap.get("response").toString();
@@ -1184,9 +1154,9 @@ public class Capability3Tests {
             long id = array.getJSONObject(0).getLong(ControlInformation.ID);
 
             for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = getEntityTypeFor(parentRelation);
+                EntityType relationEntityType = EntityType.getForRelation(parentRelation);
                 List<String> selectedProperties;
-                String[] properties = EntityProperties.getPropertiesListFor(relationEntityType);
+                List<String> properties = relationEntityType.getProperties();
                 for (String property : properties) {
                     selectedProperties = new ArrayList<>();
                     selectedProperties.add(property);
@@ -1321,7 +1291,7 @@ public class Capability3Tests {
     private void checkEntityProperties(EntityType entityType, Object response, List<String> selectedProperties) {
         try {
             JSONObject entity = new JSONObject(response.toString());
-            String[] properties = EntityProperties.getPropertiesListFor(entityType);
+            List<String> properties = entityType.getProperties();
             for (String property : properties) {
                 if (selectedProperties == null || selectedProperties.isEmpty() || selectedProperties.contains(property)) {
                     try {
@@ -1382,7 +1352,7 @@ public class Capability3Tests {
             Assert.assertNotNull(entity.get(relation), "Entity type \"" + entityType + "\" does not have expanded relation Correctly: \"" + relation + "\".");
             JSONArray expandedEntityArray = null;
             try {
-                if (relation.charAt(relation.length() - 1) != 's' && !relation.equals("FeaturesOfInterest")) {
+                if (!EntityType.isPlural(relation)) {
                     expandedEntityArray = new JSONArray();
                     expandedEntityArray.put(entity.getJSONObject(relation));
                 } else {
@@ -1391,13 +1361,14 @@ public class Capability3Tests {
             } catch (JSONException e) {
                 Assert.fail("Entity type \"" + entityType + "\" does not have expanded relation Correctly: \"" + relation + "\".");
             }
+            EntityType relationType = EntityType.getForRelation(relation);
             List<String> selectedProperties
                     = (selectedPropertiesForExpands != null && selectedPropertiesForExpands.containsKey(relation))
                     ? selectedPropertiesForExpands.get(relation)
-                    : new ArrayList<String>(Arrays.asList(EntityProperties.getPropertiesListFor(relation)));
-            checkPropertiesForEntityArray(getEntityTypeFor(relation), expandedEntityArray, selectedProperties);
+                    : new ArrayList<>(relationType.getProperties());
+            checkPropertiesForEntityArray(relationType, expandedEntityArray, selectedProperties);
             if (listContainsString(expandedRelations, "/")) {
-                String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
+                List<String> secondLevelRelations = relationType.getRelations();
                 JSONObject expandedEntity = expandedEntityArray.getJSONObject(0);
                 for (String secondLeveleRelation : secondLevelRelations) {
                     if (listContainsString(expandedRelations, relation + "/" + secondLeveleRelation)) {
@@ -1413,7 +1384,8 @@ public class Capability3Tests {
                         } catch (JSONException e) {
                             Assert.fail("Entity type \"" + entityType + "\" does not have expanded relation Correctly: \"" + relation + "/" + secondLeveleRelation + "\".");
                         }
-                        checkPropertiesForEntityArray(getEntityTypeFor(secondLeveleRelation), expandedEntityArray, new ArrayList<String>(Arrays.asList(EntityProperties.getPropertiesListFor(secondLeveleRelation))));
+                        EntityType secondLeveleRelationType = EntityType.getForRelation(secondLeveleRelation);
+                        checkPropertiesForEntityArray(secondLeveleRelationType, expandedEntityArray, new ArrayList<>(secondLeveleRelationType.getProperties()));
                     }
                 }
             }
@@ -1441,7 +1413,7 @@ public class Capability3Tests {
     private void checkEntityRelations(EntityType entityType, Object response, List<String> selectedProperties, List<String> expandedRelations, Map<String, List<String>> selectedPropertiesForExpands) {
         try {
             JSONObject entity = new JSONObject(response.toString());
-            String[] relations = EntityRelations.getRelationsListFor(entityType);
+            List<String> relations = entityType.getRelations();
             for (String relation : relations) {
                 boolean selected = (selectedProperties == null || selectedProperties.isEmpty() || selectedProperties.contains(relation));
                 boolean expanded = (expandedRelations != null && listContainsString(expandedRelations, relation));
@@ -1479,7 +1451,7 @@ public class Capability3Tests {
      */
     private void checkExpandtForEntityType(EntityType entityType) {
         List<String> expandedRelations;
-        String[] relations = EntityRelations.getRelationsListFor(entityType);
+        List<String> relations = entityType.getRelations();
         for (String relation : relations) {
             expandedRelations = new ArrayList<>();
             expandedRelations.add(relation);
@@ -1491,60 +1463,6 @@ public class Capability3Tests {
             expandedRelations.add(relation);
             String response = getEntities(entityType, -1, null, null, expandedRelations);
             checkEntitiesAllAspectsForExpandResponse(entityType, response, expandedRelations);
-        }
-    }
-
-    /**
-     * This helper method is checking $expand with nested $select for a
-     * collection.
-     *
-     * @param entityType Entity type from EntityType enum list
-     */
-    private void checkExpandWithNestedSelectForEntityType(EntityType entityType) {
-        Set<Set<String>> relationCombinations = Utils.powerSet(new HashSet<String>(Arrays.asList(EntityRelations.getRelationsListFor(entityType))));
-        for (Set<String> relationCombination : relationCombinations) {
-            List<String> expandedRelations = new ArrayList<>(relationCombination);
-            List<Set<Set<String>>> selectedPropertiesForRelations = relationCombination.stream().map(x -> Utils.powerSet(new HashSet<String>(Arrays.asList(EntityProperties.getPropertiesListFor(EntityRelations.getEntityTypeOfRelation(x)))))).collect(Collectors.toList());
-            Collection<? extends List<Set<String>>> permutations = Utils.permutations(selectedPropertiesForRelations);
-            for (List<Set<String>> currentlySelectedPropertiesForRelations : permutations) {
-                int i = 0;
-                Map<String, List<String>> mapSelectedPropertiesForRelations = new HashMap<>();
-                for (String relation : relationCombination) {
-                    Set<String> currentlySelectedProperties = currentlySelectedPropertiesForRelations.get(i);
-                    mapSelectedPropertiesForRelations.put(relation, new ArrayList<>(currentlySelectedProperties));
-                    i++;
-                }
-                List<String> expandQueries = mapSelectedPropertiesForRelations.entrySet().stream().map(
-                        x -> (x.getValue() != null && !x.getValue().isEmpty())
-                                ? x.getKey() + "($select=" + x.getValue().stream().collect(Collectors.joining(",")) + ")"
-                                : x.getKey()).collect(Collectors.toList());
-                String response = getEntities(entityType, -1, null, null, expandQueries);
-                checkEntitiesRelations(entityType, response, null, expandedRelations, mapSelectedPropertiesForRelations);
-            }
-        }
-    }
-
-    /**
-     * This helper method is checking $select and $expand for a collection.
-     *
-     * @param entityType Entity type from EntityType enum list
-     */
-    private void checkSelectAndExpandForEntityType(EntityType entityType, List<String> selectedProperties) {
-        List<String> expandedRelations;
-        String[] relations = EntityRelations.getRelationsListFor(entityType);
-        for (String relation : relations) {
-            expandedRelations = new ArrayList<>();
-            expandedRelations.add(relation);
-            String response = getEntities(entityType, -1, null, selectedProperties, expandedRelations);
-            checkEntitiesProperties(entityType, response, selectedProperties);
-            checkEntitiesRelations(entityType, response, selectedProperties, expandedRelations, null);
-        }
-        expandedRelations = new ArrayList<>();
-        for (String relation : relations) {
-            expandedRelations.add(relation);
-            String response = getEntities(entityType, -1, null, selectedProperties, expandedRelations);
-            checkEntitiesProperties(entityType, response, selectedProperties);
-            checkEntitiesRelations(entityType, response, selectedProperties, expandedRelations, null);
         }
     }
 
@@ -1555,7 +1473,7 @@ public class Capability3Tests {
      */
     private void checkExpandtForEntityTypeRelations(EntityType entityType) {
         try {
-            String[] parentRelations = EntityRelations.getRelationsListFor(entityType);
+            List<String> parentRelations = entityType.getRelations();
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             String response = responseMap.get("response").toString();
@@ -1566,9 +1484,9 @@ public class Capability3Tests {
             long id = array.getJSONObject(0).getLong(ControlInformation.ID);
 
             for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = getEntityTypeFor(parentRelation);
+                EntityType relationEntityType = EntityType.getForRelation(parentRelation);
                 List<String> expandedRelations;
-                String[] relations = EntityRelations.getRelationsListFor(relationEntityType);
+                List<String> relations = relationEntityType.getRelations();
                 for (String relation : relations) {
                     expandedRelations = new ArrayList<>();
                     expandedRelations.add(relation);
@@ -1589,45 +1507,6 @@ public class Capability3Tests {
     }
 
     /**
-     * This helper method is checking $select and $expand for 2 level of
-     * entities.
-     *
-     * @param entityType Entity type from EntityType enum list
-     */
-    private void checkSelectAndExpandForEntityTypeRelations(EntityType entityType) {
-        try {
-            String[] parentRelations = EntityRelations.getRelationsListFor(entityType);
-            String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
-            Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
-            String response = responseMap.get("response").toString();
-            JSONArray array = new JSONObject(response).getJSONArray("value");
-            if (array.length() == 0) {
-                return;
-            }
-            long id = array.getJSONObject(0).getLong(ControlInformation.ID);
-
-            for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = getEntityTypeFor(parentRelation);
-                Set<Set<String>> propertyCombinations = Utils.powerSet(new HashSet<String>(Arrays.asList(EntityProperties.getPropertiesListFor(relationEntityType))));
-                for (Set<String> propertyCombination : propertyCombinations) {
-                    List<String> expandedRelations;
-                    List<String> selectedProperties = new ArrayList<>(propertyCombination);
-                    String[] relations = EntityRelations.getRelationsListFor(relationEntityType);
-                    for (String relation : relations) {
-                        expandedRelations = new ArrayList<>();
-                        expandedRelations.add(relation);
-                        response = getEntities(entityType, id, relationEntityType, selectedProperties, expandedRelations);
-                        checkEntitiesRelations(relationEntityType, response, selectedProperties, expandedRelations, null);
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
-    }
-
-    /**
      * This helper method is checking multilevel $expand for 2 level of
      * entities.
      *
@@ -1635,7 +1514,7 @@ public class Capability3Tests {
      */
     private void checkExpandtForEntityTypeMultilevelRelations(EntityType entityType) {
         try {
-            String[] parentRelations = EntityRelations.getRelationsListFor(entityType);
+            List<String> parentRelations = entityType.getRelations();
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             String response = responseMap.get("response").toString();
@@ -1646,69 +1525,28 @@ public class Capability3Tests {
             long id = array.getJSONObject(0).getLong(ControlInformation.ID);
 
             for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = getEntityTypeFor(parentRelation);
+                EntityType parentRelationType = EntityType.getForRelation(parentRelation);
                 List<String> expandedRelations;
-                String[] relations = EntityRelations.getRelationsListFor(relationEntityType);
+                List<String> relations = parentRelationType.getRelations();
                 for (String relation : relations) {
-                    String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
+                    EntityType relationType = EntityType.getForRelation(relation);
+                    List<String> secondLevelRelations = relationType.getRelations();
 
                     for (String secondLevelRelation : secondLevelRelations) {
                         expandedRelations = new ArrayList<>();
                         expandedRelations.add(relation + "/" + secondLevelRelation);
-                        response = getEntities(entityType, id, relationEntityType, null, expandedRelations);
-                        checkEntitiesAllAspectsForExpandResponse(relationEntityType, response, expandedRelations);
+                        response = getEntities(entityType, id, parentRelationType, null, expandedRelations);
+                        checkEntitiesAllAspectsForExpandResponse(parentRelationType, response, expandedRelations);
                     }
                 }
                 expandedRelations = new ArrayList<>();
                 for (String relation : relations) {
-                    String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
+                    EntityType relationType = EntityType.getForRelation(relation);
+                    List<String> secondLevelRelations = relationType.getRelations();
                     for (String secondLevelRelation : secondLevelRelations) {
                         expandedRelations.add(relation + "/" + secondLevelRelation);
-                        response = getEntities(entityType, id, relationEntityType, null, expandedRelations);
-                        checkEntitiesAllAspectsForExpandResponse(relationEntityType, response, expandedRelations);
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
-    }
-
-    /**
-     * This helper method is checking multilevel $select and $expand for 2 level
-     * of entities.
-     *
-     * @param entityType Entity type from EntityType enum list
-     */
-    private void checkSelectAndExpandForEntityTypeMultilevelRelations(EntityType entityType) {
-        try {
-            String[] parentRelations = EntityRelations.getRelationsListFor(entityType);
-            String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
-            Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
-            String response = responseMap.get("response").toString();
-            JSONArray array = new JSONObject(response).getJSONArray("value");
-            if (array.length() == 0) {
-                return;
-            }
-            long id = array.getJSONObject(0).getLong(ControlInformation.ID);
-
-            for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = getEntityTypeFor(parentRelation);
-                Set<Set<String>> propertyCombinations = Utils.powerSet(new HashSet<String>(Arrays.asList(EntityProperties.getPropertiesListFor(relationEntityType))));
-                for (Set<String> propertyCombination : propertyCombinations) {
-                    List<String> expandedRelations;
-                    List<String> selectedProperties = new ArrayList<>(propertyCombination);
-                    String[] relations = EntityRelations.getRelationsListFor(relationEntityType);
-                    for (String relation : relations) {
-                        String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
-
-                        for (String secondLevelRelation : secondLevelRelations) {
-                            expandedRelations = new ArrayList<>();
-                            expandedRelations.add(relation + "/" + secondLevelRelation);
-                            response = getEntities(entityType, id, relationEntityType, selectedProperties, expandedRelations);
-                            checkEntitiesRelations(relationEntityType, response, selectedProperties, expandedRelations, null);
-                        }
+                        response = getEntities(entityType, id, parentRelationType, null, expandedRelations);
+                        checkEntitiesAllAspectsForExpandResponse(parentRelationType, response, expandedRelations);
                     }
                 }
             }
@@ -1724,11 +1562,11 @@ public class Capability3Tests {
      * @param entityType Entity type from EntityType enum list
      */
     private void checkExpandtForEntityTypeMultilevel(EntityType entityType) {
-
         List<String> expandedRelations;
-        String[] relations = EntityRelations.getRelationsListFor(entityType);
+        List<String> relations = entityType.getRelations();
         for (String relation : relations) {
-            String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
+            EntityType relationType = EntityType.getForRelation(relation);
+            List<String> secondLevelRelations = relationType.getRelations();
 
             for (String secondLevelRelation : secondLevelRelations) {
                 expandedRelations = new ArrayList<>();
@@ -1739,42 +1577,12 @@ public class Capability3Tests {
         }
         expandedRelations = new ArrayList<>();
         for (String relation : relations) {
-            String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
+            EntityType relationType = EntityType.getForRelation(relation);
+            List<String> secondLevelRelations = relationType.getRelations();
             for (String secondLevelRelation : secondLevelRelations) {
                 expandedRelations.add(relation + "/" + secondLevelRelation);
                 String response = getEntities(entityType, -1, null, null, expandedRelations);
                 checkEntitiesAllAspectsForExpandResponse(entityType, response, expandedRelations);
-            }
-        }
-    }
-
-    /**
-     * This helper method is checking multilevel $select and $expand for a
-     * collection.
-     *
-     * @param entityType Entity type from EntityType enum list
-     */
-    private void checkSelectAndExpandForEntityTypeMultilevel(EntityType entityType, List<String> selectedProperties) {
-
-        List<String> expandedRelations;
-        String[] relations = EntityRelations.getRelationsListFor(entityType);
-        for (String relation : relations) {
-            String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
-
-            for (String secondLevelRelation : secondLevelRelations) {
-                expandedRelations = new ArrayList<>();
-                expandedRelations.add(relation + "/" + secondLevelRelation);
-                String response = getEntities(entityType, -1, null, selectedProperties, expandedRelations);
-                checkEntitiesRelations(entityType, response, selectedProperties, expandedRelations, null);
-            }
-        }
-        expandedRelations = new ArrayList<>();
-        for (String relation : relations) {
-            String[] secondLevelRelations = EntityRelations.getRelationsListFor(relation);
-            for (String secondLevelRelation : secondLevelRelations) {
-                expandedRelations.add(relation + "/" + secondLevelRelation);
-                String response = getEntities(entityType, -1, null, selectedProperties, expandedRelations);
-                checkEntitiesRelations(entityType, response, selectedProperties, expandedRelations, null);
             }
         }
     }
@@ -1833,7 +1641,7 @@ public class Capability3Tests {
      */
     private void checkCountForEntityTypeRelations(EntityType entityType) {
         try {
-            String[] relations = EntityRelations.getRelationsListFor(entityType);
+            List<String> relations = entityType.getRelations();
             String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             String response = responseMap.get("response").toString();
@@ -1847,7 +1655,7 @@ public class Capability3Tests {
                 if (relation.charAt(relation.length() - 1) != 's' && !relation.equals("FeatureOfInterest")) {
                     return;
                 }
-                EntityType relationEntityType = getEntityTypeFor(relation);
+                EntityType relationEntityType = EntityType.getForRelation(relation);
                 urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, relationEntityType, "?$count=true");
                 responseMap = HTTPMethods.doGet(urlString);
                 response = responseMap.get("response").toString();
@@ -1921,13 +1729,13 @@ public class Capability3Tests {
      *                                              should always be supported.
      */
     private void checkFilterForEntityType(EntityType entityType) throws UnsupportedEncodingException {
-        String[] properties = EntityProperties.getPropertiesListFor(entityType);
+        List<String> properties = entityType.getProperties();
         List<String> filteredProperties;
         List<Comparable> samplePropertyValues;
-        for (int i = 0; i < properties.length; i++) {
+        for (int i = 0; i < properties.size(); i++) {
+            String property = properties.get(i);
             filteredProperties = new ArrayList<>();
             samplePropertyValues = new ArrayList<>();
-            String property = properties[i];
             filteredProperties.add(property);
             if (property.equals("location") || property.equals("feature") || property.equals("unitOfMeasurement")) {
                 continue;
@@ -1976,7 +1784,7 @@ public class Capability3Tests {
      *                                              should always be supported.
      */
     private void checkFilterForEntityTypeRelations(EntityType entityType) throws UnsupportedEncodingException {
-        String[] relations = EntityRelations.getRelationsListFor(entityType);
+        List<String> relations = entityType.getRelations();
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
         Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
         String response = responseMap.get("response").toString();
@@ -2002,15 +1810,15 @@ public class Capability3Tests {
             if (relation.charAt(relation.length() - 1) != 's' && !relation.equals("FeatureOfInterest")) {
                 return;
             }
-            EntityType relationEntityType = getEntityTypeFor(relation);
+            EntityType relationEntityType = EntityType.getForRelation(relation);
 
-            String[] properties = EntityProperties.getPropertiesListFor(relationEntityType);
+            List<String> properties = relationEntityType.getProperties();
             List<String> filteredProperties;
             List<Comparable> samplePropertyValues;
-            for (int i = 0; i < properties.length; i++) {
+            for (int i = 0; i < properties.size(); i++) {
                 filteredProperties = new ArrayList<>();
                 samplePropertyValues = new ArrayList<>();
-                String property = properties[i];
+                String property = properties.get(i);
                 filteredProperties.add(property);
                 if (property.equals("location") || property.equals("feature") || property.equals("unitOfMeasurement")) {
                     continue;
@@ -2114,42 +1922,6 @@ public class Capability3Tests {
             e.printStackTrace();
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
-    }
-
-    /**
-     * Find EntityType from its name string
-     *
-     * @param name entity type name string
-     * @return The entity type from EntityType enum list
-     */
-    private EntityType getEntityTypeFor(String name) {
-        switch (name.toLowerCase()) {
-            case "thing":
-            case "things":
-                return EntityType.THING;
-            case "location":
-            case "locations":
-                return EntityType.LOCATION;
-            case "historicallocation":
-            case "historicallocations":
-                return EntityType.HISTORICAL_LOCATION;
-            case "datastream":
-            case "datastreams":
-                return EntityType.DATASTREAM;
-            case "sensor":
-            case "sensors":
-                return EntityType.SENSOR;
-            case "observedproperty":
-            case "observedproperties":
-                return EntityType.OBSERVED_PROPERTY;
-            case "observation":
-            case "observations":
-                return EntityType.OBSERVATION;
-            case "featureofinterest":
-            case "featuresofinterest":
-                return EntityType.FEATURE_OF_INTEREST;
-        }
-        return null;
     }
 
     /**
