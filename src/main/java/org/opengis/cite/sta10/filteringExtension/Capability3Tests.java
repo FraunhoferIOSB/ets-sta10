@@ -14,7 +14,12 @@ import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.ControlInformation;
 import org.opengis.cite.sta10.util.EntityPropertiesSampleValue;
 import org.opengis.cite.sta10.util.EntityType;
+import org.opengis.cite.sta10.util.EntityUtils;
+import org.opengis.cite.sta10.util.Expand;
 import org.opengis.cite.sta10.util.HTTPMethods;
+import org.opengis.cite.sta10.util.PathElement;
+import org.opengis.cite.sta10.util.Query;
+import org.opengis.cite.sta10.util.Request;
 import org.opengis.cite.sta10.util.ServiceURLBuilder;
 import org.testng.Assert;
 import org.testng.ITestContext;
@@ -101,38 +106,47 @@ public class Capability3Tests {
      */
     @Test(description = "GET Entities with $expand", groups = "level-3")
     public void readEntitiesWithExpandQO() {
-        checkExpandtForEntityType(EntityType.THING);
-        checkExpandtForEntityType(EntityType.LOCATION);
-        checkExpandtForEntityType(EntityType.HISTORICAL_LOCATION);
-        checkExpandtForEntityType(EntityType.DATASTREAM);
-        checkExpandtForEntityType(EntityType.SENSOR);
-        checkExpandtForEntityType(EntityType.OBSERVED_PROPERTY);
-        checkExpandtForEntityType(EntityType.OBSERVATION);
-        checkExpandtForEntityType(EntityType.FEATURE_OF_INTEREST);
-        checkExpandtForEntityTypeRelations(EntityType.THING);
-        checkExpandtForEntityTypeRelations(EntityType.LOCATION);
-        checkExpandtForEntityTypeRelations(EntityType.HISTORICAL_LOCATION);
-        checkExpandtForEntityTypeRelations(EntityType.DATASTREAM);
-        checkExpandtForEntityTypeRelations(EntityType.SENSOR);
-        checkExpandtForEntityTypeRelations(EntityType.OBSERVED_PROPERTY);
-        checkExpandtForEntityTypeRelations(EntityType.OBSERVATION);
-        checkExpandtForEntityTypeRelations(EntityType.FEATURE_OF_INTEREST);
-        checkExpandtForEntityTypeMultilevel(EntityType.THING);
-        checkExpandtForEntityTypeMultilevel(EntityType.LOCATION);
-        checkExpandtForEntityTypeMultilevel(EntityType.HISTORICAL_LOCATION);
-        checkExpandtForEntityTypeMultilevel(EntityType.DATASTREAM);
-        checkExpandtForEntityTypeMultilevel(EntityType.SENSOR);
-        checkExpandtForEntityTypeMultilevel(EntityType.OBSERVED_PROPERTY);
-        checkExpandtForEntityTypeMultilevel(EntityType.OBSERVATION);
-        checkExpandtForEntityTypeMultilevel(EntityType.FEATURE_OF_INTEREST);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.THING);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.LOCATION);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.HISTORICAL_LOCATION);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.DATASTREAM);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.SENSOR);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.OBSERVED_PROPERTY);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.OBSERVATION);
-        checkExpandtForEntityTypeMultilevelRelations(EntityType.FEATURE_OF_INTEREST);
+        checkExpandForEntityType(EntityType.THING);
+        checkExpandForEntityType(EntityType.LOCATION);
+        checkExpandForEntityType(EntityType.HISTORICAL_LOCATION);
+        checkExpandForEntityType(EntityType.DATASTREAM);
+        checkExpandForEntityType(EntityType.SENSOR);
+        checkExpandForEntityType(EntityType.OBSERVED_PROPERTY);
+        checkExpandForEntityType(EntityType.OBSERVATION);
+        checkExpandForEntityType(EntityType.FEATURE_OF_INTEREST);
+        checkExpandForEntityTypeRelations(EntityType.THING, thingId1);
+        checkExpandForEntityTypeRelations(EntityType.LOCATION, locationId1);
+        checkExpandForEntityTypeRelations(EntityType.HISTORICAL_LOCATION, historicalLocationId1);
+        checkExpandForEntityTypeRelations(EntityType.DATASTREAM, datastreamId1);
+        checkExpandForEntityTypeRelations(EntityType.SENSOR, sensorId1);
+        checkExpandForEntityTypeRelations(EntityType.OBSERVED_PROPERTY, observedPropertyId1);
+        checkExpandForEntityTypeRelations(EntityType.OBSERVATION, observationId1);
+        checkExpandForEntityTypeRelations(EntityType.FEATURE_OF_INTEREST, featureOfInterestId1);
+        checkExpandForEntityTypeMultilevel(EntityType.THING);
+        checkExpandForEntityTypeMultilevel(EntityType.LOCATION);
+        checkExpandForEntityTypeMultilevel(EntityType.HISTORICAL_LOCATION);
+        checkExpandForEntityTypeMultilevel(EntityType.DATASTREAM);
+        checkExpandForEntityTypeMultilevel(EntityType.SENSOR);
+        checkExpandForEntityTypeMultilevel(EntityType.OBSERVED_PROPERTY);
+        checkExpandForEntityTypeMultilevel(EntityType.OBSERVATION);
+        checkExpandForEntityTypeMultilevel(EntityType.FEATURE_OF_INTEREST);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.THING, thingId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.LOCATION, locationId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.HISTORICAL_LOCATION, historicalLocationId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.DATASTREAM, datastreamId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.SENSOR, sensorId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.OBSERVED_PROPERTY, observedPropertyId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.OBSERVATION, observationId1);
+        checkExpandForEntityTypeMultilevelRelations(EntityType.FEATURE_OF_INTEREST, featureOfInterestId1);
+
+        checkNestedExpandForEntity(EntityType.THING, thingId1);
+        checkNestedExpandForEntity(EntityType.LOCATION, locationId1);
+        checkNestedExpandForEntity(EntityType.HISTORICAL_LOCATION, historicalLocationId1);
+        checkNestedExpandForEntity(EntityType.DATASTREAM, datastreamId1);
+        checkNestedExpandForEntity(EntityType.SENSOR, sensorId1);
+        checkNestedExpandForEntity(EntityType.OBSERVED_PROPERTY, observedPropertyId1);
+        checkNestedExpandForEntity(EntityType.OBSERVATION, observationId1);
+        checkNestedExpandForEntity(EntityType.FEATURE_OF_INTEREST, featureOfInterestId1);
 
     }
 
@@ -1422,144 +1436,246 @@ public class Capability3Tests {
     }
 
     /**
-     * This helper method is checking $expand for a collection.
+     * This helper method is checking $expand for a collection. for instance:
+     * /Things?$expand=Datastreams,HistoricalLocations
      *
      * @param entityType Entity type from EntityType enum list
      */
-    private void checkExpandtForEntityType(EntityType entityType) {
-        List<String> expandedRelations;
+    private void checkExpandForEntityType(EntityType entityType) {
         List<String> relations = entityType.getRelations();
         for (String relation : relations) {
-            expandedRelations = new ArrayList<>();
-            expandedRelations.add(relation);
-            String response = getEntities(entityType, -1, null, null, expandedRelations);
-            checkEntitiesAllAspectsForExpandResponse(entityType, response, expandedRelations);
+            Request request = new Request(rootUri);
+            request.addElement(new PathElement(entityType.plural));
+            request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
+            JSONObject response = request.executeGet();
+            EntityUtils.checkResponse(response, request);
         }
-        expandedRelations = new ArrayList<>();
+
+        Request request = new Request(rootUri);
+        request.addElement(new PathElement(entityType.plural));
         for (String relation : relations) {
-            expandedRelations.add(relation);
-            String response = getEntities(entityType, -1, null, null, expandedRelations);
-            checkEntitiesAllAspectsForExpandResponse(entityType, response, expandedRelations);
+            request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
+            JSONObject response = request.executeGet();
+            EntityUtils.checkResponse(response, request);
         }
     }
 
     /**
-     * This helper method is checking $expand for 2 level of entities.
+     * This helper method is checking $expand for entities with relations. For
+     * instance: /Things(709)/Datastreams?$expand=Thing,Sensor
      *
      * @param entityType Entity type from EntityType enum list
      */
-    private void checkExpandtForEntityTypeRelations(EntityType entityType) {
-        try {
-            List<String> parentRelations = entityType.getRelations();
-            String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
-            Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
-            String response = responseMap.get("response").toString();
-            JSONArray array = new JSONObject(response).getJSONArray("value");
-            if (array.length() == 0) {
-                return;
+    private void checkExpandForEntityTypeRelations(EntityType entityType, long entityId) {
+        PathElement entityPathElement = new PathElement(entityType.plural, entityId);
+        List<String> parentRelations = entityType.getRelations();
+        for (String parentRelation : parentRelations) {
+            EntityType parentRelationEntityType = EntityType.getForRelation(parentRelation);
+            PathElement parentRelationPathElement = new PathElement(parentRelation);
+            List<String> relations = parentRelationEntityType.getRelations();
+            for (String relation : relations) {
+                Request request = new Request(rootUri);
+                request.addElement(entityPathElement);
+                request.addElement(parentRelationPathElement);
+                request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
+                JSONObject response = request.executeGet();
+                EntityUtils.checkResponse(response, request);
             }
-            long id = array.getJSONObject(0).getLong(ControlInformation.ID);
 
-            for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = EntityType.getForRelation(parentRelation);
-                List<String> expandedRelations;
-                List<String> relations = relationEntityType.getRelations();
-                for (String relation : relations) {
-                    expandedRelations = new ArrayList<>();
-                    expandedRelations.add(relation);
-                    response = getEntities(entityType, id, relationEntityType, null, expandedRelations);
-                    checkEntitiesAllAspectsForExpandResponse(relationEntityType, response, expandedRelations);
-                }
-                expandedRelations = new ArrayList<>();
-                for (String relation : relations) {
-                    expandedRelations.add(relation);
-                    response = getEntities(entityType, id, relationEntityType, null, expandedRelations);
-                    checkEntitiesAllAspectsForExpandResponse(relationEntityType, response, expandedRelations);
-                }
+            Request request = new Request(rootUri);
+            request.addElement(entityPathElement);
+            request.addElement(parentRelationPathElement);
+            for (String relation : relations) {
+                request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
+                JSONObject response = request.executeGet();
+                EntityUtils.checkResponse(response, request);
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
     }
 
     /**
      * This helper method is checking multilevel $expand for 2 level of
-     * entities.
+     * entities. For instance:
+     * /Things(709)/Datastreams?$expand=Thing/Datastreams,Thing/HistoricalLocations
      *
      * @param entityType Entity type from EntityType enum list
      */
-    private void checkExpandtForEntityTypeMultilevelRelations(EntityType entityType) {
-        try {
-            List<String> parentRelations = entityType.getRelations();
-            String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
-            Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
-            String response = responseMap.get("response").toString();
-            JSONArray array = new JSONObject(response).getJSONArray("value");
-            if (array.length() == 0) {
-                return;
-            }
-            long id = array.getJSONObject(0).getLong(ControlInformation.ID);
+    private void checkExpandForEntityTypeMultilevelRelations(EntityType entityType, long entityId) {
+        PathElement entityPathElement = new PathElement(entityType.plural, entityId);
+        List<String> parentRelations = entityType.getRelations();
+        for (String parentRelation : parentRelations) {
+            EntityType parentRelationEntityType = EntityType.getForRelation(parentRelation);
+            PathElement parentRelationPathElement = new PathElement(parentRelation);
 
-            for (String parentRelation : parentRelations) {
-                EntityType parentRelationType = EntityType.getForRelation(parentRelation);
-                List<String> expandedRelations;
-                List<String> relations = parentRelationType.getRelations();
-                for (String relation : relations) {
-                    EntityType relationType = EntityType.getForRelation(relation);
-                    List<String> secondLevelRelations = relationType.getRelations();
-
-                    for (String secondLevelRelation : secondLevelRelations) {
-                        expandedRelations = new ArrayList<>();
-                        expandedRelations.add(relation + "/" + secondLevelRelation);
-                        response = getEntities(entityType, id, parentRelationType, null, expandedRelations);
-                        checkEntitiesAllAspectsForExpandResponse(parentRelationType, response, expandedRelations);
-                    }
-                }
-                expandedRelations = new ArrayList<>();
-                for (String relation : relations) {
-                    EntityType relationType = EntityType.getForRelation(relation);
-                    List<String> secondLevelRelations = relationType.getRelations();
-                    for (String secondLevelRelation : secondLevelRelations) {
-                        expandedRelations.add(relation + "/" + secondLevelRelation);
-                        response = getEntities(entityType, id, parentRelationType, null, expandedRelations);
-                        checkEntitiesAllAspectsForExpandResponse(parentRelationType, response, expandedRelations);
-                    }
+            List<String> relations = parentRelationEntityType.getRelations();
+            for (String relation : relations) {
+                EntityType relationType = EntityType.getForRelation(relation);
+                List<String> secondLevelRelations = relationType.getRelations();
+                for (String secondLevelRelation : secondLevelRelations) {
+                    Request request = new Request(rootUri);
+                    request.addElement(entityPathElement);
+                    request.addElement(parentRelationPathElement);
+                    Expand expand = new Expand()
+                            .addElement(new PathElement(relation))
+                            .addElement(new PathElement(secondLevelRelation));
+                    request.getQuery().addExpand(expand);
+                    JSONObject response = request.executeGet();
+                    request.reNest();
+                    EntityUtils.checkResponse(response, request);
                 }
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
+            Request request = new Request(rootUri);
+            request.addElement(entityPathElement);
+            request.addElement(parentRelationPathElement);
+
+            for (String relation : relations) {
+                EntityType relationType = EntityType.getForRelation(relation);
+                List<String> secondLevelRelations = relationType.getRelations();
+                for (String secondLevelRelation : secondLevelRelations) {
+                    Expand expand = new Expand()
+                            .addElement(new PathElement(relation))
+                            .addElement(new PathElement(secondLevelRelation));
+                    request.getQuery().addExpand(expand);
+                    JSONObject response = request.executeGet();
+                    EntityUtils.checkResponse(response, request.clone().reNest());
+                }
+            }
         }
     }
 
     /**
-     * This helper method is checking multilevel $expand for a collection.
+     * This helper method is checking multilevel $expand for a collection. For
+     * instance: /Things?$expand=Datastreams/Thing,Datastreams/Sensor
      *
      * @param entityType Entity type from EntityType enum list
      */
-    private void checkExpandtForEntityTypeMultilevel(EntityType entityType) {
-        List<String> expandedRelations;
+    private void checkExpandForEntityTypeMultilevel(EntityType entityType) {
         List<String> relations = entityType.getRelations();
         for (String relation : relations) {
             EntityType relationType = EntityType.getForRelation(relation);
             List<String> secondLevelRelations = relationType.getRelations();
 
             for (String secondLevelRelation : secondLevelRelations) {
-                expandedRelations = new ArrayList<>();
-                expandedRelations.add(relation + "/" + secondLevelRelation);
-                String response = getEntities(entityType, -1, null, null, expandedRelations);
-                checkEntitiesAllAspectsForExpandResponse(entityType, response, expandedRelations);
+                Request request = new Request(rootUri);
+                request.addElement(new PathElement(entityType.plural));
+                Expand expand = new Expand()
+                        .addElement(new PathElement(relation))
+                        .addElement(new PathElement(secondLevelRelation));
+                request.getQuery().addExpand(expand);
+                JSONObject response = request.executeGet();
+                request.reNest();
+                EntityUtils.checkResponse(response, request);
             }
         }
-        expandedRelations = new ArrayList<>();
+
+        Request request = new Request(rootUri);
+        request.addElement(new PathElement(entityType.plural));
         for (String relation : relations) {
             EntityType relationType = EntityType.getForRelation(relation);
             List<String> secondLevelRelations = relationType.getRelations();
             for (String secondLevelRelation : secondLevelRelations) {
-                expandedRelations.add(relation + "/" + secondLevelRelation);
-                String response = getEntities(entityType, -1, null, null, expandedRelations);
-                checkEntitiesAllAspectsForExpandResponse(entityType, response, expandedRelations);
+                Expand expand = new Expand()
+                        .addElement(new PathElement(relation))
+                        .addElement(new PathElement(secondLevelRelation));
+                request.getQuery().addExpand(expand);
+                JSONObject response = request.executeGet();
+                EntityUtils.checkResponse(response, request.clone().reNest());
+            }
+        }
+    }
+
+    /**
+     * This helper method is checking nested expands two levels deep including
+     * select and count options. For instance:
+     * <pre>
+     * ObservedProperties(722)?
+     *   $select=name,description&
+     *   $expand=Datastreams(
+     *     $select=name,unitOfMeasurement,Thing,ObservedProperty;
+     *     $expand=Thing(
+     *       $select=name,Datastreams,Locations
+     *     ),
+     *     Sensor(
+     *       $select=description,metadata
+     *     ),
+     *     ObservedProperty(
+     *       $select=name,description
+     *     ),
+     *     Observations(
+     *       $select=result,Datastream;
+     *       $count=false
+     *     );
+     *     $count=true
+     *   )
+     * </pre>
+     *
+     * @param entityType Entity type from EntityType enum list
+     */
+    private void checkNestedExpandForEntity(EntityType entityType, long entityId) {
+        PathElement entityPathElement = new PathElement(entityType.plural, entityId);
+        Request request2 = new Request(rootUri);
+        request2.addElement(entityPathElement);
+        boolean even = true;
+
+        List<String> parentRelations = entityType.getRelations();
+        for (String parentRelation : parentRelations) {
+            EntityType parentRelationEntityType = EntityType.getForRelation(parentRelation);
+            List<String> childRelations = parentRelationEntityType.getRelations();
+            for (String childRelation : childRelations) {
+                EntityType childRelationEntityType = EntityType.getForRelation(childRelation);
+                Request request = new Request(rootUri);
+                request.addElement(entityPathElement);
+                Query query = request.getQuery();
+                entityType.getHalfPropertiesRelations(query.getSelect(), even);
+                query.setCount(even);
+                Expand expand = new Expand()
+                        .addElement(new PathElement(parentRelation));
+                query.addExpand(expand);
+                even = !even;
+
+                query = expand.getQuery();
+                query.setCount(even);
+                parentRelationEntityType.getHalfPropertiesRelations(query.getSelect(), even);
+                expand = new Expand()
+                        .addElement(new PathElement(childRelation));
+                query.addExpand(expand);
+                even = !even;
+
+                query = expand.getQuery();
+                childRelationEntityType.getHalfPropertiesRelations(query.getSelect(), even);
+                query.setCount(even);
+                even = !even;
+
+                JSONObject response = request.executeGet();
+                EntityUtils.checkResponse(response, request);
+            }
+
+            Query query1 = request2.getQuery();
+            Expand expand = new Expand()
+                    .addElement(new PathElement(parentRelation));
+            query1.addExpand(expand);
+            entityType.getHalfPropertiesRelations(query1.getSelect(), even);
+            query1.setCount(even);
+            even = !even;
+
+            Query query2 = expand.getQuery();
+            for (String childRelation : childRelations) {
+                parentRelationEntityType.getHalfPropertiesRelations(query2.getSelect(), even);
+                query2.setCount(even);
+                EntityType childRelationEntityType = EntityType.getForRelation(childRelation);
+                expand = new Expand()
+                        .addElement(new PathElement(childRelation));
+                query2.addExpand(expand);
+                even = !even;
+
+                Query query3 = expand.getQuery();
+                childRelationEntityType.getHalfPropertiesRelations(query3.getSelect(), even);
+                query3.setCount(even);
+                even = !even;
+
+                JSONObject response = request2.executeGet();
+                EntityUtils.checkResponse(response, request2);
+                even = !even;
             }
         }
     }
@@ -1688,22 +1804,11 @@ public class Capability3Tests {
     }
 
     /**
-     * This helper method is the start point for checking $expand response.
-     *
-     * @param entityType        Entity type from EntityType enum list
-     * @param response          The response to be checked
-     * @param expandedRelations List of expanded relations
-     */
-    private void checkEntitiesAllAspectsForExpandResponse(EntityType entityType, String response, List<String> expandedRelations) {
-        checkEntitiesRelations(entityType, response, null, expandedRelations);
-    }
-
-    /**
      * This helper method is checking $filter for a collection.
      *
      * @param entityType Entity type from EntityType enum list
      * @throws java.io.UnsupportedEncodingException Should not happen, UTF-8
-     *                                              should always be supported.
+     * should always be supported.
      */
     private void checkFilterForEntityType(EntityType entityType) throws UnsupportedEncodingException {
         List<String> properties = entityType.getProperties();

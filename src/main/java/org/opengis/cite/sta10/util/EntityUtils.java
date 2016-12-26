@@ -10,8 +10,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.Assert;
 
 /**
  * Utility methods for comparing results and cleaning the service.
@@ -106,6 +110,126 @@ public class EntityUtils {
             }
         }
         LOGGER.info("Deleted {} using {}.", count, doa.getClass().getName());
+    }
+
+    /**
+     * Checks the given response against the given request.
+     *
+     * @param response the response object to check.
+     * @param request the request to check the response against.
+     */
+    public static void checkResponse(JSONObject response, Request request) {
+        try {
+            if (request.isCollection()) {
+                checkCollection(response.getJSONArray("value"), request);
+
+                // check count for request
+                Query expandQuery = request.getQuery();
+                Boolean count = expandQuery.getCount();
+                if (count != null) {
+                    String countProperty = "@iot.count";
+                    if (count) {
+                        Assert.assertTrue(response.has(countProperty), "Response should have property " + countProperty + " for request: '" + request.toString() + "'");
+                    } else {
+                        Assert.assertFalse(response.has(countProperty), "Response should not have property " + countProperty + " for request: '" + request.toString() + "'");
+                    }
+                }
+
+            } else {
+                checkEntity(response, request);
+            }
+        } catch (JSONException ex) {
+            Assert.fail("Failure when checking response of query '" + request.getLastUrl() + "'", ex);
+        }
+    }
+
+    /**
+     * Check a collection from a response, against the given expand as present
+     * in the request.
+     *
+     * @param collection The collection of items to check.
+     * @param expand The expand that led to the collection.
+     * @throws JSONException if there is a problem with the json.
+     */
+    public static void checkCollection(JSONArray collection, Expand expand) throws JSONException {
+        // todo: check top
+        // todo: check skip
+        // todo: check nextlink
+        // Check entities
+        for (int i = 0; i < collection.length(); i++) {
+            checkEntity(collection.getJSONObject(i), expand);
+        }
+        // todo: check orderby
+        // todo: check filter
+    }
+
+    /**
+     * Check the given entity from a response against the given expand.
+     *
+     * @param entity The entity to check.
+     * @param expand The expand that led to the entity.
+     * @throws JSONException if there is a problem with the json.
+     */
+    public static void checkEntity(JSONObject entity, Expand expand) throws JSONException {
+        EntityType entityType = expand.getEntityType();
+        Query query = expand.getQuery();
+
+        // Check properties & select
+        List<String> select = new ArrayList<>(query.getSelect());
+        if (select.isEmpty()) {
+            select.addAll(entityType.getProperties());
+            if (expand.isToplevel()) {
+                select.addAll(entityType.getRelations());
+            }
+        }
+        for (String propertyName : entityType.getProperties()) {
+            if (select.contains(propertyName)) {
+                Assert.assertTrue(entity.has(propertyName), "Entity should have property " + propertyName + " for request: '" + expand.toString() + "'");
+            } else {
+                Assert.assertFalse(entity.has(propertyName), "Entity should not have property " + propertyName + " for request: '" + expand.toString() + "'");
+            }
+        }
+        for (String relationName : entityType.getRelations()) {
+            String propertyName = relationName + "@iot.navigationLink";
+            if (select.contains(relationName)) {
+                Assert.assertTrue(entity.has(propertyName), "Entity should have property " + propertyName + " for request: '" + expand.toString() + "'");
+            } else {
+                Assert.assertFalse(entity.has(propertyName), "Entity should not have property " + propertyName + " for request: '" + expand.toString() + "'");
+            }
+        }
+
+        // Check expand
+        List<String> relations = new ArrayList<>(entityType.getRelations());
+        for (Expand subExpand : query.getExpand()) {
+            PathElement path = subExpand.getPath().get(0);
+            String propertyName = path.getPropertyName();
+            if (!entity.has(propertyName)) {
+                Assert.fail("Entity should have expanded " + propertyName + " for request: '" + expand.toString() + "'");
+            }
+            if (path.isCollection()) {
+                checkCollection(entity.getJSONArray(propertyName), subExpand);
+            } else {
+                checkEntity(entity.getJSONObject(propertyName), subExpand);
+            }
+            relations.remove(propertyName);
+
+            // check count for expand
+            Query expandQuery = subExpand.getQuery();
+            Boolean count = expandQuery.getCount();
+            if (subExpand.isCollection() && count != null) {
+                String countProperty = propertyName + "@iot.count";
+                if (count) {
+                    Assert.assertTrue(entity.has(countProperty), "Entity should have property " + countProperty + " for request: '" + expand.toString() + "'");
+                } else {
+                    Assert.assertFalse(entity.has(countProperty), "Entity should not have property " + countProperty + " for request: '" + expand.toString() + "'");
+                }
+            }
+        }
+        for (String propertyName : relations) {
+            if (entity.has(propertyName)) {
+                Assert.fail("Entity should not have expanded " + propertyName + " for request: '" + expand.toString() + "'");
+            }
+        }
     }
 
 }
