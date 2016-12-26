@@ -87,14 +87,14 @@ public class Capability3Tests {
         checkSelectForEntityType(EntityType.OBSERVED_PROPERTY);
         checkSelectForEntityType(EntityType.OBSERVATION);
         checkSelectForEntityType(EntityType.FEATURE_OF_INTEREST);
-        checkSelectForEntityTypeRelations(EntityType.THING);
-        checkSelectForEntityTypeRelations(EntityType.LOCATION);
-        checkSelectForEntityTypeRelations(EntityType.HISTORICAL_LOCATION);
-        checkSelectForEntityTypeRelations(EntityType.DATASTREAM);
-        checkSelectForEntityTypeRelations(EntityType.SENSOR);
-        checkSelectForEntityTypeRelations(EntityType.OBSERVED_PROPERTY);
-        checkSelectForEntityTypeRelations(EntityType.OBSERVATION);
-        checkSelectForEntityTypeRelations(EntityType.FEATURE_OF_INTEREST);
+        checkSelectForEntityTypeRelations(EntityType.THING, thingId1);
+        checkSelectForEntityTypeRelations(EntityType.LOCATION, locationId1);
+        checkSelectForEntityTypeRelations(EntityType.HISTORICAL_LOCATION, historicalLocationId1);
+        checkSelectForEntityTypeRelations(EntityType.DATASTREAM, datastreamId1);
+        checkSelectForEntityTypeRelations(EntityType.SENSOR, sensorId1);
+        checkSelectForEntityTypeRelations(EntityType.OBSERVED_PROPERTY, observedPropertyId1);
+        checkSelectForEntityTypeRelations(EntityType.OBSERVATION, observationId1);
+        checkSelectForEntityTypeRelations(EntityType.FEATURE_OF_INTEREST, featureOfInterestId1);
 
     }
 
@@ -1134,19 +1134,21 @@ public class Capability3Tests {
      * @param entityType Entity type from EntityType enum list
      */
     private void checkSelectForEntityType(EntityType entityType) {
-        List<String> selectedProperties;
         List<String> properties = entityType.getProperties();
         for (String property : properties) {
-            selectedProperties = new ArrayList<>();
-            selectedProperties.add(property);
-            String response = getEntities(entityType, -1, null, selectedProperties, null);
-            checkEntitiesAllAspectsForSelectResponse(entityType, response, selectedProperties);
+            Request request = new Request(rootUri);
+            request.addElement(new PathElement(entityType.plural));
+            request.getQuery().addSelect(property);
+            JSONObject response = request.executeGet();
+            EntityUtils.checkResponse(response, request);
         }
-        selectedProperties = new ArrayList<>();
+
+        Request request = new Request(rootUri);
+        request.addElement(new PathElement(entityType.plural));
         for (String property : properties) {
-            selectedProperties.add(property);
-            String response = getEntities(entityType, -1, null, selectedProperties, null);
-            checkEntitiesAllAspectsForSelectResponse(entityType, response, selectedProperties);
+            request.getQuery().addSelect(property);
+            JSONObject response = request.executeGet();
+            EntityUtils.checkResponse(response, request);
         }
     }
 
@@ -1155,283 +1157,29 @@ public class Capability3Tests {
      *
      * @param entityType Entity type from EntityType enum list
      */
-    private void checkSelectForEntityTypeRelations(EntityType entityType) {
-        try {
-            List<String> parentRelations = entityType.getRelations();
-            String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
-            Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
-            String response = responseMap.get("response").toString();
-            JSONArray array = new JSONObject(response).getJSONArray("value");
-            if (array.length() == 0) {
-                return;
-            }
-            long id = array.getJSONObject(0).getLong(ControlInformation.ID);
-
-            for (String parentRelation : parentRelations) {
-                EntityType relationEntityType = EntityType.getForRelation(parentRelation);
-                List<String> selectedProperties;
-                List<String> properties = relationEntityType.getProperties();
-                for (String property : properties) {
-                    selectedProperties = new ArrayList<>();
-                    selectedProperties.add(property);
-                    response = getEntities(entityType, id, relationEntityType, selectedProperties, null);
-                    checkEntitiesAllAspectsForSelectResponse(relationEntityType, response, selectedProperties);
-                }
-                selectedProperties = new ArrayList<>();
-                for (String property : properties) {
-                    selectedProperties.add(property);
-                    response = getEntities(entityType, id, relationEntityType, selectedProperties, null);
-                    checkEntitiesAllAspectsForSelectResponse(relationEntityType, response, selectedProperties);
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
-    }
-
-    /**
-     * Send GET request with $select and $expand and check the response.
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param id                 The id of the entity
-     * @param relationEntityType The relation entity type from EntityType enum
-     *                           list
-     * @param selectedProperties The list of selected properties
-     * @param expandedRelations  The list of expanded properties
-     * @return The response of GET request in string format
-     */
-    private String getEntities(EntityType entityType, long id, EntityType relationEntityType, List<String> selectedProperties, List<String> expandedRelations) {
-        String urlString = rootUri;
-        String selectString = "";
-        if (selectedProperties != null && selectedProperties.size() > 0) {
-            selectString = "?$select=";
-            for (String select : selectedProperties) {
-                if (selectString.charAt(selectString.length() - 1) != '=') {
-                    selectString += ',';
-                }
-                selectString += select;
-            }
-        }
-        String expandString = "";
-        if (expandedRelations != null && expandedRelations.size() > 0) {
-            expandString = selectString.equals("") ? "?$expand=" : "&$expand=";
-            for (String expand : expandedRelations) {
-                if (expandString.charAt(expandString.length() - 1) != '=') {
-                    expandString += ',';
-                }
-                expandString += expand;
-            }
-        }
-        if (entityType != null) {
-            urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, relationEntityType, selectString + expandString);
-        }
-        Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
-        String response = responseMap.get("response").toString();
-        int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
-        Assert.assertEquals(responseCode, 200, "Error during getting entities: " + entityType.name());
-        return response;
-    }
-
-    /**
-     * This helper method is the start point for checking $select response
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param response           The response to be checked
-     * @param selectedProperties The list of selected properties
-     */
-    private void checkEntitiesAllAspectsForSelectResponse(EntityType entityType, String response, List<String> selectedProperties) {
-        checkEntitiesProperties(entityType, response, selectedProperties);
-        checkEntitiesRelations(entityType, response, selectedProperties, null);
-    }
-
-    /**
-     * This method is checking properties for the $select response of a
-     * collection
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param response           The response to be checked
-     * @param selectedProperties The list of selected properties
-     */
-    private void checkEntitiesProperties(EntityType entityType, String response, List<String> selectedProperties) {
-        try {
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            JSONArray entities = null;
-            if (response.contains("value")) {
-                entities = jsonResponse.getJSONArray("value");
-            } else {
-                entities = new JSONArray();
-                entities.put(jsonResponse);
-            }
-            checkPropertiesForEntityArray(entityType, entities, selectedProperties);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
-
-    }
-
-    /**
-     * This method is checking properties for the $select array of entities
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param entities           The JSONArray of entities to be checked
-     * @param selectedProperties The list of selected properties
-     */
-    private void checkPropertiesForEntityArray(EntityType entityType, JSONArray entities, List<String> selectedProperties) {
-        int count = 0;
-        for (int i = 0; i < entities.length() && count < 2; i++) {
-            count++;
-            JSONObject entity = null;
-            try {
-                entity = entities.getJSONObject(i);
-            } catch (JSONException e) {
-                e.printStackTrace();
-                Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-            }
-            checkEntityProperties(entityType, entity, selectedProperties);
-        }
-    }
-
-    /**
-     * This method is checking properties for the $select response of a single
-     * entity
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param response           The response to be checked
-     * @param selectedProperties The list of selected properties
-     */
-    private void checkEntityProperties(EntityType entityType, Object response, List<String> selectedProperties) {
-        try {
-            JSONObject entity = new JSONObject(response.toString());
-            List<String> properties = entityType.getProperties();
+    private void checkSelectForEntityTypeRelations(EntityType entityType, long entityId) {
+        List<String> parentRelations = entityType.getRelations();
+        for (String parentRelation : parentRelations) {
+            EntityType relationEntityType = EntityType.getForRelation(parentRelation);
+            List<String> properties = relationEntityType.getProperties();
             for (String property : properties) {
-                if (selectedProperties.contains(property)) {
-                    try {
-                        Assert.assertNotNull(entity.get(property), "Entity type \"" + entityType + "\" does not have selected property: \"" + property + "\".");
-                    } catch (JSONException e) {
-                        Assert.fail("Entity type \"" + entityType + "\" does not have selected property: \"" + property + "\".");
-                    }
-                } else {
-                    try {
-                        Assert.assertNull(entity.get(property), "Entity type \"" + entityType + "\" contains not-selected property: \"" + property + "\".");
-                    } catch (JSONException e) {
-                    }
-                }
+                Request request = new Request(rootUri);
+                request.addElement(new PathElement(entityType.plural, entityId));
+                request.addElement(new PathElement(parentRelation));
+
+                request.getQuery().addSelect(property);
+                JSONObject response = request.executeGet();
+                EntityUtils.checkResponse(response, request);
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
 
-    }
-
-    /**
-     * This method is checking the related entities of selected and/or expanded
-     * entities for a collection
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param response           The response to be checked
-     * @param selectedProperties The list of selected properties
-     * @param expandedRelations  The list of expanded properties
-     */
-    private void checkEntitiesRelations(EntityType entityType, String response, List<String> selectedProperties, List<String> expandedRelations) {
-        try {
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            JSONArray entities = null;
-            if (response.contains("value")) {
-                entities = jsonResponse.getJSONArray("value");
-            } else {
-                entities = new JSONArray();
-                entities.put(jsonResponse);
+            Request request = new Request(rootUri);
+            request.addElement(new PathElement(entityType.plural, entityId));
+            request.addElement(new PathElement(parentRelation));
+            for (String property : properties) {
+                request.getQuery().addSelect(property);
+                JSONObject response = request.executeGet();
+                EntityUtils.checkResponse(response, request);
             }
-            int count = 0;
-            for (int i = 0; i < entities.length() && count < 2; i++) {
-                count++;
-                JSONObject entity = entities.getJSONObject(i);
-                checkEntityRelations(entityType, entity, selectedProperties, expandedRelations);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
-        }
-
-    }
-
-    /**
-     * This method is checking the related entities of selected and/or expanded
-     * entities for a single entity
-     *
-     * @param entityType         Entity type from EntityType enum list
-     * @param response           The response to be checked
-     * @param selectedProperties The list of selected properties
-     * @param expandedRelations  The list of expanded properties
-     */
-    private void checkEntityRelations(EntityType entityType, Object response, List<String> selectedProperties, List<String> expandedRelations) {
-        try {
-            JSONObject entity = new JSONObject(response.toString());
-            List<String> relations = entityType.getRelations();
-            for (String relation : relations) {
-                EntityType relationType = EntityType.getForRelation(relation);
-                if (selectedProperties == null || selectedProperties.contains(relation)) {
-                    if (expandedRelations == null || !listContainsString(expandedRelations, relation)) {
-                        try {
-                            Assert.assertNotNull(entity.get(relation + ControlInformation.NAVIGATION_LINK), "Entity type \"" + entityType + "\" does not have selected relation: \"" + relation + "\".");
-                        } catch (JSONException e) {
-                            Assert.fail("Entity type \"" + entityType + "\" does not have selected relation: \"" + relation + "\".");
-                        }
-                    } else {
-                        Assert.assertNotNull(entity.get(relation), "Entity type \"" + entityType + "\" does not have expanded relation Correctly: \"" + relation + "\".");
-                        JSONArray expandedEntityArray = null;
-                        try {
-                            if (!EntityType.isPlural(relation)) {
-                                expandedEntityArray = new JSONArray();
-                                expandedEntityArray.put(entity.getJSONObject(relation));
-                            } else {
-                                expandedEntityArray = entity.getJSONArray(relation);
-                            }
-                        } catch (JSONException e) {
-                            Assert.fail("Entity type \"" + entityType + "\" does not have expanded relation Correctly: \"" + relation + "\".");
-                        }
-                        checkPropertiesForEntityArray(relationType, expandedEntityArray, new ArrayList<>(relationType.getProperties()));
-                        if (listContainsString(expandedRelations, "/")) {
-                            List<String> secondLevelRelations = relationType.getRelations();
-                            JSONObject expandedEntity = expandedEntityArray.getJSONObject(0);
-                            for (String secondLeveleRelation : secondLevelRelations) {
-                                EntityType secondLevelRelationType = EntityType.getForRelation(secondLeveleRelation);
-                                if (listContainsString(expandedRelations, relation + "/" + secondLeveleRelation)) {
-
-                                    expandedEntityArray = null;
-                                    try {
-                                        if (!EntityType.isPlural(secondLeveleRelation)) {
-                                            expandedEntityArray = new JSONArray();
-                                            expandedEntityArray.put(expandedEntity.getJSONObject(secondLeveleRelation));
-                                        } else {
-                                            expandedEntityArray = expandedEntity.getJSONArray(secondLeveleRelation);
-                                        }
-                                    } catch (JSONException e) {
-                                        Assert.fail("Entity type \"" + entityType + "\" does not have expanded relation Correctly: \"" + relation + "/" + secondLeveleRelation + "\".");
-                                    }
-                                    checkPropertiesForEntityArray(secondLevelRelationType, expandedEntityArray, new ArrayList<>(secondLevelRelationType.getProperties()));
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    try {
-                        Assert.assertNull(entity.get(relation + ControlInformation.NAVIGATION_LINK), "Entity type \"" + entityType + "\" contains not-selectd relation: \"" + relation + "\".");
-                    } catch (JSONException e) {
-                    }
-                    try {
-                        Assert.assertNull(entity.get(relation), "Entity type \"" + entityType + "\" contains not-selectd relation: \"" + relation + "\".");
-                    } catch (JSONException e) {
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
     }
 
@@ -2349,29 +2097,6 @@ public class Capability3Tests {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
 
-    }
-
-    /**
-     * The helper method to check if a list contains a entity name string
-     *
-     * @param list   The list to be searched
-     * @param entity The entity name to be checked
-     * @return True if the entity name exists is the list, false otherwise
-     */
-    private boolean listContainsString(List<String> list, String entity) {
-        for (String item : list) {
-            if (item.toLowerCase().contains(entity.toLowerCase())) {
-                if (entity.toLowerCase().equals("locations") && (item.toLowerCase().equals("historicallocations/thing") || item.toLowerCase().equals("historicallocations") || item.toLowerCase().equals("things/historicallocations") || item.toLowerCase().equals("thing/historicallocations"))) {
-                    continue;
-                }
-                if (!entity.contains("/") && item.contains("/" + entity)) {
-                    continue;
-                }
-                return true;
-
-            }
-        }
-        return false;
     }
 
     /**
