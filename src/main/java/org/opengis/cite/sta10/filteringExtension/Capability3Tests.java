@@ -12,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.ControlInformation;
+import org.opengis.cite.sta10.util.EntityCounts;
 import org.opengis.cite.sta10.util.EntityPropertiesSampleValue;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.EntityUtils;
@@ -45,6 +46,8 @@ public class Capability3Tests {
             observedPropertyId1, observedPropertyId2, observedPropertyId3,
             observationId1, observationId2, observationId3, observationId4, observationId5, observationId6, observationId7, observationId8, observationId9, observationId10, observationId11, observationId12,
             featureOfInterestId1, featureOfInterestId2;
+
+    private EntityCounts entityCounts = new EntityCounts();
 
     /**
      * This method will be run before starting the test for this conformance
@@ -1140,7 +1143,7 @@ public class Capability3Tests {
             request.addElement(new PathElement(entityType.plural));
             request.getQuery().addSelect(property);
             JSONObject response = request.executeGet();
-            EntityUtils.checkResponse(response, request);
+            EntityUtils.checkResponse(response, request, entityCounts);
         }
 
         Request request = new Request(rootUri);
@@ -1148,7 +1151,7 @@ public class Capability3Tests {
         for (String property : properties) {
             request.getQuery().addSelect(property);
             JSONObject response = request.executeGet();
-            EntityUtils.checkResponse(response, request);
+            EntityUtils.checkResponse(response, request, entityCounts);
         }
     }
 
@@ -1169,7 +1172,7 @@ public class Capability3Tests {
 
                 request.getQuery().addSelect(property);
                 JSONObject response = request.executeGet();
-                EntityUtils.checkResponse(response, request);
+                EntityUtils.checkResponse(response, request, entityCounts);
             }
 
             Request request = new Request(rootUri);
@@ -1178,7 +1181,7 @@ public class Capability3Tests {
             for (String property : properties) {
                 request.getQuery().addSelect(property);
                 JSONObject response = request.executeGet();
-                EntityUtils.checkResponse(response, request);
+                EntityUtils.checkResponse(response, request, entityCounts);
             }
         }
     }
@@ -1196,7 +1199,7 @@ public class Capability3Tests {
             request.addElement(new PathElement(entityType.plural));
             request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
             JSONObject response = request.executeGet();
-            EntityUtils.checkResponse(response, request);
+            EntityUtils.checkResponse(response, request, entityCounts);
         }
 
         Request request = new Request(rootUri);
@@ -1204,7 +1207,7 @@ public class Capability3Tests {
         for (String relation : relations) {
             request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
             JSONObject response = request.executeGet();
-            EntityUtils.checkResponse(response, request);
+            EntityUtils.checkResponse(response, request, entityCounts);
         }
     }
 
@@ -1227,7 +1230,7 @@ public class Capability3Tests {
                 request.addElement(parentRelationPathElement);
                 request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
                 JSONObject response = request.executeGet();
-                EntityUtils.checkResponse(response, request);
+                EntityUtils.checkResponse(response, request, entityCounts);
             }
 
             Request request = new Request(rootUri);
@@ -1236,7 +1239,7 @@ public class Capability3Tests {
             for (String relation : relations) {
                 request.getQuery().addExpand(new Expand().addElement(new PathElement(relation)));
                 JSONObject response = request.executeGet();
-                EntityUtils.checkResponse(response, request);
+                EntityUtils.checkResponse(response, request, entityCounts);
             }
         }
     }
@@ -1269,7 +1272,7 @@ public class Capability3Tests {
                     request.getQuery().addExpand(expand);
                     JSONObject response = request.executeGet();
                     request.reNest();
-                    EntityUtils.checkResponse(response, request);
+                    EntityUtils.checkResponse(response, request, entityCounts);
                 }
             }
             Request request = new Request(rootUri);
@@ -1285,7 +1288,7 @@ public class Capability3Tests {
                             .addElement(new PathElement(secondLevelRelation));
                     request.getQuery().addExpand(expand);
                     JSONObject response = request.executeGet();
-                    EntityUtils.checkResponse(response, request.clone().reNest());
+                    EntityUtils.checkResponse(response, request.clone().reNest(), entityCounts);
                 }
             }
         }
@@ -1312,7 +1315,7 @@ public class Capability3Tests {
                 request.getQuery().addExpand(expand);
                 JSONObject response = request.executeGet();
                 request.reNest();
-                EntityUtils.checkResponse(response, request);
+                EntityUtils.checkResponse(response, request, entityCounts);
             }
         }
 
@@ -1327,14 +1330,14 @@ public class Capability3Tests {
                         .addElement(new PathElement(secondLevelRelation));
                 request.getQuery().addExpand(expand);
                 JSONObject response = request.executeGet();
-                EntityUtils.checkResponse(response, request.clone().reNest());
+                EntityUtils.checkResponse(response, request.clone().reNest(), entityCounts);
             }
         }
     }
 
     /**
      * This helper method is checking nested expands two levels deep including
-     * select and count options. For instance:
+     * select, top, skip and count options. For instance:
      * <pre>
      * ObservedProperties(722)?
      *   $select=name,description&
@@ -1360,10 +1363,12 @@ public class Capability3Tests {
      * @param entityType Entity type from EntityType enum list
      */
     private void checkNestedExpandForEntity(EntityType entityType, long entityId) {
+        PathElement collectionPathElement = new PathElement(entityType.plural);
         PathElement entityPathElement = new PathElement(entityType.plural, entityId);
         Request request2 = new Request(rootUri);
-        request2.addElement(entityPathElement);
+        request2.addElement(collectionPathElement);
         boolean even = true;
+        long skip = 0;
 
         List<String> parentRelations = entityType.getRelations();
         for (String parentRelation : parentRelations) {
@@ -1376,26 +1381,40 @@ public class Capability3Tests {
                 Query query = request.getQuery();
                 entityType.getHalfPropertiesRelations(query.getSelect(), even);
                 query.setCount(even);
+                query.setTop(2L);
+                query.setSkip(skip);
                 Expand expand = new Expand()
                         .addElement(new PathElement(parentRelation));
                 query.addExpand(expand);
                 even = !even;
+                skip = 1 - skip;
 
                 query = expand.getQuery();
                 query.setCount(even);
+                query.setTop(2L);
+                query.setSkip(skip);
                 parentRelationEntityType.getHalfPropertiesRelations(query.getSelect(), even);
                 expand = new Expand()
                         .addElement(new PathElement(childRelation));
                 query.addExpand(expand);
                 even = !even;
+                skip = 1 - skip;
 
                 query = expand.getQuery();
                 childRelationEntityType.getHalfPropertiesRelations(query.getSelect(), even);
                 query.setCount(even);
+                query.setTop(2L);
+                query.setSkip(skip);
                 even = !even;
+                skip = 1 - skip;
 
                 JSONObject response = request.executeGet();
-                EntityUtils.checkResponse(response, request);
+                EntityUtils.checkResponse(response, request, entityCounts);
+
+                request.getPath().clear();
+                request.addElement(collectionPathElement);
+                response = request.executeGet();
+                EntityUtils.checkResponse(response, request, entityCounts);
             }
 
             Query query1 = request2.getQuery();
@@ -1422,7 +1441,7 @@ public class Capability3Tests {
                 even = !even;
 
                 JSONObject response = request2.executeGet();
-                EntityUtils.checkResponse(response, request2);
+                EntityUtils.checkResponse(response, request2, entityCounts);
                 even = !even;
             }
         }
@@ -1856,7 +1875,7 @@ public class Capability3Tests {
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
             sensorId2 = new JSONObject(response).getLong(ControlInformation.ID);
-            urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.DATASTREAM, datastreamId1, EntityType.OBSERVED_PROPERTY, null);
+            urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.DATASTREAM, datastreamId2, EntityType.OBSERVED_PROPERTY, null);
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
             observedPropertyId2 = new JSONObject(response).getLong(ControlInformation.ID);
@@ -2091,6 +2110,43 @@ public class Capability3Tests {
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
             featureOfInterestId2 = new JSONObject(response).getLong(ControlInformation.ID);
+
+            entityCounts.setGlobalCount(EntityType.DATASTREAM, 4);
+            entityCounts.setGlobalCount(EntityType.FEATURE_OF_INTEREST, 2);
+            entityCounts.setGlobalCount(EntityType.HISTORICAL_LOCATION, 4);
+            entityCounts.setGlobalCount(EntityType.LOCATION, 2);
+            entityCounts.setGlobalCount(EntityType.OBSERVATION, 12);
+            entityCounts.setGlobalCount(EntityType.OBSERVED_PROPERTY, 3);
+            entityCounts.setGlobalCount(EntityType.SENSOR, 4);
+            entityCounts.setGlobalCount(EntityType.THING, 2);
+
+            entityCounts.setCount(EntityType.THING, thingId1, EntityType.LOCATION, 1);
+            entityCounts.setCount(EntityType.THING, thingId2, EntityType.LOCATION, 1);
+            entityCounts.setCount(EntityType.THING, thingId1, EntityType.HISTORICAL_LOCATION, 2);
+            entityCounts.setCount(EntityType.THING, thingId2, EntityType.HISTORICAL_LOCATION, 2);
+            entityCounts.setCount(EntityType.THING, thingId1, EntityType.DATASTREAM, 2);
+            entityCounts.setCount(EntityType.THING, thingId2, EntityType.DATASTREAM, 2);
+            entityCounts.setCount(EntityType.LOCATION, locationId1, EntityType.THING, 1);
+            entityCounts.setCount(EntityType.LOCATION, locationId2, EntityType.THING, 1);
+            entityCounts.setCount(EntityType.LOCATION, locationId1, EntityType.HISTORICAL_LOCATION, 2);
+            entityCounts.setCount(EntityType.LOCATION, locationId2, EntityType.HISTORICAL_LOCATION, 2);
+            entityCounts.setCount(EntityType.HISTORICAL_LOCATION, historicalLocationId1, EntityType.LOCATION, 1);
+            entityCounts.setCount(EntityType.HISTORICAL_LOCATION, historicalLocationId2, EntityType.LOCATION, 1);
+            entityCounts.setCount(EntityType.HISTORICAL_LOCATION, historicalLocationId3, EntityType.LOCATION, 1);
+            entityCounts.setCount(EntityType.HISTORICAL_LOCATION, historicalLocationId4, EntityType.LOCATION, 1);
+            entityCounts.setCount(EntityType.DATASTREAM, datastreamId1, EntityType.OBSERVATION, 3);
+            entityCounts.setCount(EntityType.DATASTREAM, datastreamId2, EntityType.OBSERVATION, 3);
+            entityCounts.setCount(EntityType.DATASTREAM, datastreamId3, EntityType.OBSERVATION, 3);
+            entityCounts.setCount(EntityType.DATASTREAM, datastreamId4, EntityType.OBSERVATION, 3);
+            entityCounts.setCount(EntityType.SENSOR, sensorId1, EntityType.DATASTREAM, 1);
+            entityCounts.setCount(EntityType.SENSOR, sensorId2, EntityType.DATASTREAM, 1);
+            entityCounts.setCount(EntityType.SENSOR, sensorId3, EntityType.DATASTREAM, 1);
+            entityCounts.setCount(EntityType.SENSOR, sensorId4, EntityType.DATASTREAM, 1);
+            entityCounts.setCount(EntityType.OBSERVED_PROPERTY, observedPropertyId1, EntityType.DATASTREAM, 1);
+            entityCounts.setCount(EntityType.OBSERVED_PROPERTY, observedPropertyId2, EntityType.DATASTREAM, 2);
+            entityCounts.setCount(EntityType.OBSERVED_PROPERTY, observedPropertyId3, EntityType.DATASTREAM, 1);
+            entityCounts.setCount(EntityType.FEATURE_OF_INTEREST, featureOfInterestId1, EntityType.OBSERVATION, 6);
+            entityCounts.setCount(EntityType.FEATURE_OF_INTEREST, featureOfInterestId2, EntityType.OBSERVATION, 6);
 
         } catch (JSONException e) {
             e.printStackTrace();

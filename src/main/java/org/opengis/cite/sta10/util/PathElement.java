@@ -63,6 +63,10 @@ public class PathElement implements Cloneable {
         return plural && id == null;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     @Override
     protected PathElement clone() {
         PathElement clone;

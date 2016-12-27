@@ -30,7 +30,7 @@ public enum EntityType {
     private static final Set<String> NAMES_PLURAL = new HashSet<>();
 
     static {
-        // TODO: Add properties and id, fix test that break
+        // TODO: Add properties, fix test that break
         THING.addProperties("name", "description");
         THING.addRelations(DATASTREAM.plural, HISTORICAL_LOCATION.plural, LOCATION.plural);
 
@@ -93,13 +93,14 @@ public enum EntityType {
 
     /**
      * Clears and then fills the target list with either the odd or even
-     * properties and relations.
+     * properties and relations. Always returns "id".
      *
      * @param target the list to fill.
      * @param even if true, the even properties are taken, otherwise the odd.
      */
     public void getHalfPropertiesRelations(List<String> target, final boolean even) {
         target.clear();
+        target.add("id");
         boolean isEven = true;
         for (String property : properties) {
             if (even == isEven) {
