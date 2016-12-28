@@ -183,15 +183,18 @@ public class EntityUtils {
                     int foundNumber = response.getJSONArray("value").length();
                     long skip = expandQuery.getSkip() == null ? 0 : expandQuery.getSkip();
 
-                    long expectedNumber = Math.min(expectedCount - skip, top);
+                    long expectedNumber = Math.max(0, Math.min(expectedCount - skip, top));
                     if (foundNumber != expectedNumber) {
                         Assert.fail("Requested " + top + " of " + expectedCount + ", expected " + expectedNumber + " with skip of " + skip + " but received " + foundNumber + " for request: '" + request.toString() + "'");
                     }
 
+                    String nextLinkProperty = "@iot.nextLink";
                     if (foundNumber + skip < expectedCount) {
                         // should have nextLink
-                        String nextLinkProperty = "@iot.nextLink";
                         Assert.assertTrue(response.has(nextLinkProperty), "Entity should have " + nextLinkProperty + " for request: '" + request.toString() + "'");
+                    } else {
+                        // should not have nextLink
+                        Assert.assertFalse(response.has(nextLinkProperty), "Entity should not have " + nextLinkProperty + " for request: '" + request.toString() + "'");
                     }
 
                 }
@@ -237,10 +240,16 @@ public class EntityUtils {
         // Check properties & select
         List<String> select = new ArrayList<>(query.getSelect());
         if (select.isEmpty()) {
+            select.add("id");
             select.addAll(entityType.getProperties());
             if (expand.isToplevel()) {
                 select.addAll(entityType.getRelations());
             }
+        }
+        if (select.contains("id")) {
+            Assert.assertTrue(entity.has("@iot.id"), "Entity should have property @iot.id for request: '" + expand.toString() + "'");
+        } else {
+            Assert.assertFalse(entity.has("@iot.id"), "Entity should not have property @iot.id for request: '" + expand.toString() + "'");
         }
         for (String propertyName : entityType.getProperties()) {
             if (select.contains(propertyName)) {
@@ -309,10 +318,13 @@ public class EntityUtils {
                         Assert.fail("Requested " + top + " of " + expectedCount + ", expected " + expectedNumber + " with skip of " + skip + " but received " + foundNumber);
                     }
 
+                    String nextLinkProperty = propertyName + "@iot.nextLink";
                     if (foundNumber + skip < expectedCount) {
                         // should have nextLink
-                        String nextLinkProperty = propertyName + "@iot.nextLink";
                         Assert.assertTrue(entity.has(nextLinkProperty), "Entity should have " + nextLinkProperty + " for expand " + subExpand.toString());
+                    } else {
+                        // should not have nextLink
+                        Assert.assertFalse(entity.has(nextLinkProperty), "Entity should have " + nextLinkProperty + " for expand " + subExpand.toString());
                     }
 
                 }
