@@ -15,6 +15,9 @@
  */
 package org.opengis.cite.sta10.util;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,5 +75,13 @@ public class Utils {
             copy.add(element);
             permutationsImpl(ori, res, d + 1, copy);
         }
+    }
+
+    public static String urlEncode(String link) {
+        try {
+            return URLEncoder.encode(link, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException ex) {
+        }
+        return link;
     }
 }
