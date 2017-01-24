@@ -98,7 +98,7 @@ public class MqttHelper {
                 result.addMessage(entry.getKey(), entry.getValue().get());
             }
         } catch (InterruptedException | ExecutionException ex) {
-            Assert.fail("Error subcribing to MQTT.", ex);
+            Assert.fail("Error subscribing to MQTT.", ex);
         } finally {
             executor.shutdownNow();
         }

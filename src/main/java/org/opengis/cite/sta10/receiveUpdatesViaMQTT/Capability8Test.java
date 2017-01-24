@@ -251,9 +251,14 @@ public class Capability8Test {
         createEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
-            for (String property : entityType.getProperties()) {
+            for (String property : entityType.getPropertyNames()) {
                 Map<String, Object> propertyChange = new HashMap<>(0);
-                propertyChange.put(property, changes.get(property));
+                Object change = changes.get(property);
+                if (change == null) {
+                    // No change prepared for this property.
+                    continue;
+                }
+                propertyChange.put(property, change);
                 MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
                         () -> {
                             return entityHelper.patchEntity(entityType, propertyChange, ids.get(entityType));
@@ -270,9 +275,14 @@ public class Capability8Test {
         createEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
-            for (String property : entityType.getProperties()) {
+            for (String property : entityType.getPropertyNames()) {
                 Map<String, Object> propertyChange = new HashMap<>(0);
-                propertyChange.put(property, changes.get(property));
+                Object change = changes.get(property);
+                if (change == null) {
+                    // No change prepared for this property.
+                    continue;
+                }
+                propertyChange.put(property, change);
                 MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
                         () -> {
                             return entityHelper.putEntity(entityType, propertyChange, ids.get(entityType));
@@ -421,7 +431,7 @@ public class Capability8Test {
     }
 
     private List<String> getSelectedProperties(EntityType entityType) {
-        List<String> allProperties = entityType.getProperties();
+        List<String> allProperties = new ArrayList<>(entityType.getPropertyNames());
         List<String> selectedProperties = new ArrayList<>(allProperties.size() / 2);
         for (int i = 0; i < allProperties.size(); i += 2) {
             selectedProperties.add(allProperties.get(i));

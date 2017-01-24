@@ -49,9 +49,9 @@ public class EntityUtils {
     /**
      * Checks if the list contains all the given entities exactly once.
      *
-     * @param result
-     * @param entityList
-     * @return
+     * @param result the result to check.
+     * @param entityList the expected entities.
+     * @return the result of the comparison.
      */
     public static resultTestResult resultContains(EntityList<? extends Entity> result, List<? extends Entity> entityList) {
         long count = result.getCount();
@@ -241,7 +241,7 @@ public class EntityUtils {
         List<String> select = new ArrayList<>(query.getSelect());
         if (select.isEmpty()) {
             select.add("id");
-            select.addAll(entityType.getProperties());
+            select.addAll(entityType.getPropertyNames());
             if (expand.isToplevel()) {
                 select.addAll(entityType.getRelations());
             }
@@ -251,11 +251,13 @@ public class EntityUtils {
         } else {
             Assert.assertFalse(entity.has("@iot.id"), "Entity should not have property @iot.id for request: '" + expand.toString() + "'");
         }
-        for (String propertyName : entityType.getProperties()) {
-            if (select.contains(propertyName)) {
-                Assert.assertTrue(entity.has(propertyName), "Entity should have property " + propertyName + " for request: '" + expand.toString() + "'");
+        for (EntityType.EntityProperty property : entityType.getProperties()) {
+            if (select.contains(property.name)) {
+                Assert.assertTrue(
+                        entity.has(property.name) || property.optional,
+                        "Entity should have property " + property.name + " for request: '" + expand.toString() + "'");
             } else {
-                Assert.assertFalse(entity.has(propertyName), "Entity should not have property " + propertyName + " for request: '" + expand.toString() + "'");
+                Assert.assertFalse(entity.has(property.name), "Entity should not have property " + property.name + " for request: '" + expand.toString() + "'");
             }
         }
         for (String relationName : entityType.getRelations()) {

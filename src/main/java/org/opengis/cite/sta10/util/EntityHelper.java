@@ -527,8 +527,6 @@ public class EntityHelper {
             changes.put("description", "Data coming from sensor on ISS.");
             changes.put("observationType", "http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Observation");
             changes.put("unitOfMeasurement", new JSONObject("{\"name\": \"Entropy\",\"symbol\": \"S\",\"definition\": \"http://qudt.org/vocab/unit#Entropy\"}"));
-            changes.put("phenomenonTime", "2015-12-12T12:12:12Z/2015-12-12T15:30:00Z");
-            changes.put("resultTime", "2015-12-12T12:12:12Z/2015-12-12T15:30:00Z");
             return changes;
         } catch (JSONException ex) {
             Assert.fail("Generating Datastream changes failed", ex);
