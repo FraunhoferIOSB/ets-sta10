@@ -442,7 +442,7 @@ public class Capability8Test {
     private JSONObject getSubEntityByRoot(EntityType rootEntityType, Long rootId, EntityType subtEntityType) {
         try {
             String path = getPathToRelatedEntity(subtEntityType, rootEntityType);
-            path = "/" + subtEntityType.getRootEntitySet() + "?$filter=" + path + "/id%20eq%20" + rootId;
+            path = "/" + subtEntityType.getRootEntitySet() + "?$count=true&$filter=" + path + "/id%20eq%20" + rootId;
             JSONObject result = entityHelper.getEntity(path);
             if (result.getInt("@iot.count") != 1) {
                 Assert.fail("Invalid result with size != 1");
@@ -512,7 +512,9 @@ public class Capability8Test {
                     String selfLink2 = obj2.getString("@iot.selfLink");
                     URI baseUri2 = URI.create(selfLink2.substring(0, selfLink2.indexOf(version))).resolve(topic);
                     String absoluteUri2 = baseUri2.resolve(obj2.getString(key)).toString();
-                    return absoluteUri1.equals(absoluteUri2);
+                    if (!absoluteUri1.equals(absoluteUri2)) {
+                        return false;
+                    }
 
                 } else if (!val1.equals(obj2.get(key))) {
                     return false;

@@ -338,7 +338,7 @@ public class DataArrayTests {
         Map<String, Object> responseMap = HTTPMethods.doPost(urlString, jsonString);
         String response = responseMap.get("response").toString();
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
-        Assert.assertEquals(responseCode, 201, "Error getting Observations using Data Array: Code " + responseCode);
+        Assert.assertEquals(responseCode, 201, "Error posting Observations using Data Array: Code " + responseCode);
 
         JsonNode json;
         try {
