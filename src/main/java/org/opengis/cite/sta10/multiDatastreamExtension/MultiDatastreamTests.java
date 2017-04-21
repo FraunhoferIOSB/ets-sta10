@@ -393,6 +393,14 @@ public class MultiDatastreamTests {
         for (String relation : EntityTypeMds.MULTI_DATASTREAM.getRelations()) {
             entitiesHaveOneOf(json, "MultiDatastreams", relation + "@iot.navigationLink");
         }
+
+        String urlString = rootUri + "/Observations(" + OBSERVATIONS.get(5).getId() + ")/result[0]";
+        json = getJsonObject(urlString);
+        JsonNode value = json.get("result[0]");
+        if (value == null || !value.isNumber()) {
+            Assert.fail("Did not get a numeric value for result[0] for url: " + urlString);
+        }
+        Assert.assertEquals(value.asInt(), 4, "Did not get correct value for url: " + urlString);
     }
 
     @Test(description = "Test if all Datastreams and MultiDatastreams are linked to Thing 1.", groups = "level-5", priority = 2)
