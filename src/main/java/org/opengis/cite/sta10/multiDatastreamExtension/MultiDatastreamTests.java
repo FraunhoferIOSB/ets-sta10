@@ -159,7 +159,7 @@ public class MultiDatastreamTests {
         createObservation(DATASTREAMS.get(1).withOnlyId(), 0);
     }
 
-    private static void createObservation(Datastream ds, double... result) throws ServiceFailureException {
+    private static void createObservation(Datastream ds, double result) throws ServiceFailureException {
         Observation o = new Observation(result, ds);
         service.create(o);
         OBSERVATIONS.add(o);
@@ -281,7 +281,7 @@ public class MultiDatastreamTests {
         MULTIDATASTREAMS.add(md4);
     }
 
-    @Test(description = "Test Observation in MultiDatastream creation.", groups = "level-5", priority = 1)
+    @Test(description = "Test creation of Observations in MultiDatastream.", groups = "level-5", priority = 1)
     public void testObservationInMultiDatastream() throws ServiceFailureException {
         createObservation(MULTIDATASTREAMS.get(0).withOnlyId(), 1);
         createObservation(MULTIDATASTREAMS.get(0).withOnlyId(), 2);
@@ -300,7 +300,40 @@ public class MultiDatastreamTests {
         createObservation(MULTIDATASTREAMS.get(3).withOnlyId(), 12, 9);
     }
 
-    private JsonNode getJsonValue(String urlString) {
+    @Test(description = "Test creation of incorrect Observations in MultiDatastream.", groups = "level-5", priority = 2)
+    public void testObservationInMultiDatastreamIncorrect() throws ServiceFailureException {
+        boolean failed = false;
+        try {
+            Observation o = new Observation(1, MULTIDATASTREAMS.get(1).withOnlyId());
+            service.create(o);
+        } catch (ServiceFailureException e) {
+            failed = true;
+        }
+        if (!failed) {
+            Assert.fail("Service should have rejected posting non-array result to a multidatastream.");
+        }
+
+        failed = false;
+        try {
+            createObservation(MULTIDATASTREAMS.get(0).withOnlyId(), 1, 2);
+        } catch (ServiceFailureException e) {
+            failed = true;
+        }
+        if (!failed) {
+            Assert.fail("Service should have rejected posting 2 results to a multidatastream with only 1 observed property.");
+        }
+        failed = false;
+        try {
+            createObservation(MULTIDATASTREAMS.get(1).withOnlyId(), 1);
+        } catch (ServiceFailureException e) {
+            failed = true;
+        }
+        if (!failed) {
+            Assert.fail("Service should have rejected posting 1 result to a multidatastream with 2 observed properties.");
+        }
+    }
+
+    private JsonNode getJsonObject(String urlString) {
         Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
         String response = responseMap.get("response").toString();
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
@@ -316,6 +349,11 @@ public class MultiDatastreamTests {
         if (!json.isObject()) {
             Assert.fail("Server did not return a JSON object for request: " + urlString);
         }
+        return json;
+    }
+
+    private JsonNode getJsonValue(String urlString) {
+        JsonNode json = getJsonObject(urlString);
         JsonNode value = json.get("value");
         if (value == null || !value.isArray()) {
             Assert.fail("value field is not an array for request: " + urlString);
@@ -338,7 +376,7 @@ public class MultiDatastreamTests {
         }
     }
 
-    @Test(description = "Test LowLevel JSON.", groups = "level-6", priority = 2)
+    @Test(description = "Test LowLevel JSON.", groups = "level-5", priority = 2)
     public void testJson() throws ServiceFailureException {
         JsonNode json = getJsonValue(rootUri + "/Things");
         entitiesHaveOneOf(json, "Things", "MultiDatastreams@iot.navigationLink");
@@ -355,6 +393,14 @@ public class MultiDatastreamTests {
         for (String relation : EntityTypeMds.MULTI_DATASTREAM.getRelations()) {
             entitiesHaveOneOf(json, "MultiDatastreams", relation + "@iot.navigationLink");
         }
+
+        String urlString = rootUri + "/Observations(" + OBSERVATIONS.get(5).getId() + ")/result[0]";
+        json = getJsonObject(urlString);
+        JsonNode value = json.get("result[0]");
+        if (value == null || !value.isNumber()) {
+            Assert.fail("Did not get a numeric value for result[0] for url: " + urlString);
+        }
+        Assert.assertEquals(value.asInt(), 4, "Did not get correct value for url: " + urlString);
     }
 
     @Test(description = "Test if all Datastreams and MultiDatastreams are linked to Thing 1.", groups = "level-5", priority = 2)
@@ -450,6 +496,29 @@ public class MultiDatastreamTests {
         ObservedProperty modifiedObservedProp = OBSERVED_PROPS.get(1).withOnlyId();
         modifiedObservedProp.getMultiDatastreams().add(MULTIDATASTREAMS.get(0).withOnlyId());
         updateForException("Linking MultiDatastream to Observed property.", modifiedObservedProp);
+    }
+
+    @Test(description = "Check MultiDatastream(x)/Observations works.", groups = "level-5", priority = 11)
+    public void testFetchObservationsByMultiDatastream() throws ServiceFailureException {
+        EntityList<Observation> observations = MULTIDATASTREAMS.get(0).observations().query().list();
+        checkResult(
+                "Looking for all observations",
+                EntityUtils.resultContains(observations, getFromList(OBSERVATIONS, 2, 3, 4)));
+
+        observations = MULTIDATASTREAMS.get(1).observations().query().list();
+        checkResult(
+                "Looking for all observations",
+                EntityUtils.resultContains(observations, getFromList(OBSERVATIONS, 5, 6, 7)));
+
+        observations = MULTIDATASTREAMS.get(2).observations().query().list();
+        checkResult(
+                "Looking for all observations",
+                EntityUtils.resultContains(observations, getFromList(OBSERVATIONS, 8, 9, 10)));
+
+        observations = MULTIDATASTREAMS.get(3).observations().query().list();
+        checkResult(
+                "Looking for all observations",
+                EntityUtils.resultContains(observations, getFromList(OBSERVATIONS, 11, 12, 13)));
     }
 
     @Test(description = "Check if all observations are there.", groups = "level-5", priority = 11)
