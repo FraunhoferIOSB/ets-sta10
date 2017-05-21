@@ -148,6 +148,41 @@ public class JsonPropertiesTests {
             service.create(o);
             OBSERVATIONS.add(o);
         }
+        {
+            Map<String, Object> parameters = new HashMap<>();
+            Observation o = new Observation("badVales1", datastream);
+            parameters.put("int", generateString(13, 10));
+            parameters.put("string", 13 % 2 == 0);
+            parameters.put("boolean", 13);
+            parameters.put("objArray", generateIntArray(13, 5));
+            parameters.put("intArray", generateIntIntArray(13, 3));
+            parameters.put("intIntArray", generateObjectList(13, 3));
+            o.setParameters(parameters);
+            service.create(o);
+            OBSERVATIONS.add(o);
+        }
+        {
+            Map<String, Object> parameters = new HashMap<>();
+            Observation o = new Observation("badVales2", datastream);
+            parameters.put("boolean", generateString(14, 10));
+            parameters.put("int", 14 % 2 == 0);
+            parameters.put("string", 14);
+            parameters.put("intIntArray", generateIntArray(14, 5));
+            parameters.put("objArray", generateIntIntArray(14, 3));
+            parameters.put("intArray", generateObjectList(14, 3));
+            o.setParameters(parameters);
+            service.create(o);
+            OBSERVATIONS.add(o);
+        }
+        {
+            Map<String, Object> parameters = new HashMap<>();
+            Observation o = new Observation("badVales3", datastream);
+            parameters.put("boolean", "true");
+            parameters.put("int", "5");
+            o.setParameters(parameters);
+            service.create(o);
+            OBSERVATIONS.add(o);
+        }
     }
 
     /**
@@ -305,6 +340,8 @@ public class JsonPropertiesTests {
 
         filterAndCheck(service.things(), "properties/objArray[0]/string eq 'jklmnopqrs'", getFromList(THINGS, 1));
         filterAndCheck(service.observations(), "parameters/objArray[0]/string eq 'jklmnopqrs'", getFromList(OBSERVATIONS, 9));
+
+        filterAndCheck(service.observations(), "parameters/int eq '5'", getFromList(OBSERVATIONS, 5, 15));
     }
 
     @Test(description = "Test filter on number property in json", groups = "level-3", priority = 4)
@@ -315,8 +352,14 @@ public class JsonPropertiesTests {
         filterAndCheck(service.things(), "properties/int gt 9", getFromList(THINGS, 2, 3));
         filterAndCheck(service.observations(), "parameters/int gt 8", getFromList(OBSERVATIONS, 9, 10, 11, 12));
 
+        filterAndCheck(service.things(), "properties/int lt 9", getFromList(THINGS, 0));
+        filterAndCheck(service.observations(), "parameters/int lt 8", getFromList(OBSERVATIONS, 0, 1, 2, 3, 4, 5, 6, 7));
+
         filterAndCheck(service.things(), "properties/intArray[1] gt 10", getFromList(THINGS, 2, 3));
         filterAndCheck(service.observations(), "parameters/intArray[1] gt 9", getFromList(OBSERVATIONS, 9, 10, 11, 12));
+
+        filterAndCheck(service.things(), "properties/intArray[1] lt 10", getFromList(THINGS, 0));
+        filterAndCheck(service.observations(), "parameters/intArray[1] lt 9", getFromList(OBSERVATIONS, 0, 1, 2, 3, 4, 5, 6, 7));
 
         filterAndCheck(service.things(), "properties/intIntArray[1][0] gt 10", getFromList(THINGS, 2, 3));
         filterAndCheck(service.observations(), "parameters/intIntArray[1][0] gt 9", getFromList(OBSERVATIONS, 9, 10, 11, 12));
