@@ -128,7 +128,7 @@ public class JsonPropertiesTests {
         service.create(obsProp);
         O_PROPS.add(obsProp);
 
-        Datastream datastream = new Datastream("Datastream 1", "The temperature of thing 1, sensor 1.", "someType", new UnitOfMeasurement("degree celcius", "°C", "ucum:T"));
+        Datastream datastream = new Datastream("Datastream 1", "The temperature of thing 1, sensor 1.", "someType", new UnitOfMeasurement("degree celcius", "°C", "Cel"));
         datastream.setThing(THINGS.get(0));
         datastream.setSensor(sensor);
         datastream.setObservedProperty(obsProp);
@@ -183,6 +183,13 @@ public class JsonPropertiesTests {
             service.create(o);
             OBSERVATIONS.add(o);
         }
+
+        datastream = new Datastream("Datastream 2", "The temperature of thing 1, sensor 1.", "someType", new UnitOfMeasurement("degree Fahrenheit", "°F", "[degF]"));
+        datastream.setThing(THINGS.get(0));
+        datastream.setSensor(sensor);
+        datastream.setObservedProperty(obsProp);
+        service.create(datastream);
+        DATASTREAMS.add(datastream);
     }
 
     /**
@@ -381,6 +388,16 @@ public class JsonPropertiesTests {
 
         filterAndCheck(service.things(), "properties/objArray[1]/boolean", getFromList(THINGS, 1, 3));
         filterAndCheck(service.observations(), "parameters/objArray[1]/boolean", getFromList(OBSERVATIONS, 1, 3, 5, 7, 9, 11));
+    }
+
+    @Test(description = "Test filter on unit of measurement", groups = "level-3", priority = 4)
+    public void testUnitOfMeasurementFilter() throws ServiceFailureException {
+        filterAndCheck(service.datastreams(), "unitOfMeasurement/symbol eq '" + DATASTREAMS.get(0).getUnitOfMeasurement().getSymbol() + "'", getFromList(DATASTREAMS, 0));
+        filterAndCheck(service.datastreams(), "unitOfMeasurement/symbol eq '" + DATASTREAMS.get(1).getUnitOfMeasurement().getSymbol() + "'", getFromList(DATASTREAMS, 1));
+        filterAndCheck(service.datastreams(), "unitOfMeasurement/name eq '" + DATASTREAMS.get(0).getUnitOfMeasurement().getName() + "'", getFromList(DATASTREAMS, 0));
+        filterAndCheck(service.datastreams(), "unitOfMeasurement/name eq '" + DATASTREAMS.get(1).getUnitOfMeasurement().getName() + "'", getFromList(DATASTREAMS, 1));
+        filterAndCheck(service.datastreams(), "unitOfMeasurement/definition eq '" + DATASTREAMS.get(0).getUnitOfMeasurement().getDefinition() + "'", getFromList(DATASTREAMS, 0));
+        filterAndCheck(service.datastreams(), "unitOfMeasurement/definition eq '" + DATASTREAMS.get(1).getUnitOfMeasurement().getDefinition() + "'", getFromList(DATASTREAMS, 1));
     }
 
     private JsonNode getJsonObjectForResponse(String urlString) {
