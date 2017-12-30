@@ -18,13 +18,6 @@ package org.opengis.cite.sta10.util;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -35,53 +28,52 @@ public class Utils {
     private Utils() {
     }
 
-    public static <T> Set<Set<T>> powerSet(Set<T> originalSet) {
-        Set<Set<T>> sets = new HashSet<>();
-        if (originalSet.isEmpty()) {
-            sets.add(new HashSet<>());
-            return sets;
-        }
-        List<T> list = new ArrayList<>(originalSet);
-        T head = list.get(0);
-        Set<T> rest = new HashSet<>(list.subList(1, list.size()));
-        for (Set<T> set : powerSet(rest)) {
-            Set<T> newSet = new HashSet<>();
-            newSet.add(head);
-            newSet.addAll(set);
-            sets.add(newSet);
-            sets.add(set);
-        }
-        return sets;
-    }
-
-    public static <T> Collection<? extends List<T>> permutations(List<? extends Collection<T>> collections) {
-        if (collections == null || collections.isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            Collection<List<T>> res = new LinkedList<>();
-            permutationsImpl(collections, res, 0, new LinkedList<T>());
-            return res;
-        }
-    }
-
-    private static <T> void permutationsImpl(List<? extends Collection<T>> ori, Collection<List<T>> res, int d, List<T> current) {
-        if (d == ori.size()) {
-            res.add(current);
-            return;
-        }
-        Collection<T> currentCollection = ori.get(d);
-        for (T element : currentCollection) {
-            List<T> copy = new LinkedList<>(current);
-            copy.add(element);
-            permutationsImpl(ori, res, d + 1, copy);
-        }
-    }
-
     public static String urlEncode(String link) {
         try {
             return URLEncoder.encode(link, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException ex) {
         }
         return link;
+    }
+
+    /**
+     * Quote the ID for use in json, if needed.
+     *
+     * @param id The id to quote.
+     * @return The quoted id.
+     */
+    public static String quoteIdForJson(Object id) {
+        if (id instanceof Number) {
+            return id.toString();
+        }
+        return "\"" + id + "\"";
+    }
+
+    /**
+     * Quote the ID for use in URLs, if needed.
+     *
+     * @param id The id to quote.
+     * @return The quoted id.
+     */
+    public static String quoteIdForUrl(Object id) {
+        if (id instanceof Number) {
+            return id.toString();
+        }
+        return "'" + id + "'";
+    }
+
+    public static Object idObjectFromPostResult(String postResultLine) {
+        int pos1 = postResultLine.lastIndexOf("(") + 1;
+        int pos2 = postResultLine.lastIndexOf(")");
+        String part = postResultLine.substring(pos1, pos2);
+        try {
+            return Long.parseLong(part);
+        } catch (NumberFormatException exc) {
+            // Id was not a long, thus a String.
+            if (!part.startsWith("'") || !part.endsWith("'")) {
+                throw new IllegalArgumentException("Strings in urls must be quoted with single quotes.");
+            }
+            return part.substring(1, part.length() - 1);
+        }
     }
 }

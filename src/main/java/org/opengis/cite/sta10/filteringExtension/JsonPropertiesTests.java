@@ -197,7 +197,7 @@ public class JsonPropertiesTests {
      * given letter, where a=0.
      *
      * @param startLetter the starting letter (a=0).
-     * @param length The length of the string to generate.
+     * @param length      The length of the string to generate.
      * @return The string.
      */
     public static String generateString(int startLetter, int length) {
@@ -218,7 +218,7 @@ public class JsonPropertiesTests {
      * given number.
      *
      * @param startValue the starting number.
-     * @param length The length of the array to generate.
+     * @param length     The length of the array to generate.
      * @return The string.
      */
     public static int[] generateIntArray(int startValue, int length) {
@@ -268,70 +268,70 @@ public class JsonPropertiesTests {
 
     @Test(description = "Low level tests", groups = "level-3", priority = 0)
     public void testFetchLowLevelThingProperties() throws ServiceFailureException {
-        String urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/string";
+        String urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/string";
         JsonNode json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "string", (String) THINGS.get(0).getProperties().get("string"), urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/boolean";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/boolean";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "boolean", (Boolean) THINGS.get(0).getProperties().get("boolean"), urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/int";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/int";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "int", (Integer) THINGS.get(0).getProperties().get("int"), urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/intArray";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/intArray";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intArray", (int[]) THINGS.get(0).getProperties().get("intArray"), urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/intArray[1]";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/intArray[1]";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intArray[1]", ((int[]) THINGS.get(0).getProperties().get("intArray"))[1], urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/intIntArray[1]";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/intIntArray[1]";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intIntArray[1]", ((int[][]) THINGS.get(0).getProperties().get("intIntArray"))[1], urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/intIntArray[0][1]";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/intIntArray[0][1]";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intIntArray[0][1]", ((int[][]) THINGS.get(0).getProperties().get("intIntArray"))[0][1], urlString);
 
-        urlString = rootUri + "/Things(" + THINGS.get(0).getId() + ")/properties/objArray[0]/string";
+        urlString = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/objArray[0]/string";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "string", ((List<Map<String, String>>) THINGS.get(0).getProperties().get("objArray")).get(0).get("string"), urlString);
     }
 
     @Test(description = "Low level tests", groups = "level-3", priority = 1)
     public void testFetchLowLevelObservationParameters() throws ServiceFailureException {
-        String urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/string";
+        String urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/string";
         JsonNode json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "string", (String) OBSERVATIONS.get(0).getParameters().get("string"), urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/boolean";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/boolean";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "boolean", (Boolean) OBSERVATIONS.get(0).getParameters().get("boolean"), urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/int";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/int";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "int", (Integer) OBSERVATIONS.get(0).getParameters().get("int"), urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/intArray";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/intArray";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intArray", (int[]) OBSERVATIONS.get(0).getParameters().get("intArray"), urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/intArray[1]";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/intArray[1]";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intArray[1]", ((int[]) OBSERVATIONS.get(0).getParameters().get("intArray"))[1], urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/intIntArray[1]";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/intIntArray[1]";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intIntArray[1]", ((int[][]) OBSERVATIONS.get(0).getParameters().get("intIntArray"))[1], urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/intIntArray[0][1]";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/intIntArray[0][1]";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "intIntArray[0][1]", ((int[][]) OBSERVATIONS.get(0).getParameters().get("intIntArray"))[0][1], urlString);
 
-        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId() + ")/parameters/objArray[0]/string";
+        urlString = rootUri + "/Observations(" + OBSERVATIONS.get(0).getId().getUrl() + ")/parameters/objArray[0]/string";
         json = getJsonObjectForResponse(urlString);
         testResponseProperty(json, "string", ((List<Map<String, String>>) OBSERVATIONS.get(0).getParameters().get("objArray")).get(0).get("string"), urlString);
 

@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
+import org.opengis.cite.sta10.util.ControlInformation;
 import org.opengis.cite.sta10.util.EntityHelper;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
@@ -47,9 +48,10 @@ public class Capability7Test {
 
     @Test(description = "Create observation via MQTT on observation entity set (topic: [version]/Observations", groups = "level-7")
     public void checkCreateObservationDirect() {
+        entityHelper.deleteEntityType(EntityType.OBSERVATION);
         JSONObject createdObservation = getObservation();
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
-        JSONObject latestObservation = entityHelper.getLatestEntity(
+        JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 "$expand=Datastream($select=id),FeatureOfInterest($select=id)&$select=result,phenomenonTime,validTime,parameters");
         Assert.assertTrue(jsonEquals(latestObservation, createdObservation));
@@ -57,15 +59,16 @@ public class Capability7Test {
 
     @Test(description = "Create observation via MQTT using topic [version]/Datastreams([ID])/Observations", groups = "level-7")
     public void checkCreateObservationViaDatastream() {
+        entityHelper.deleteEntityType(EntityType.OBSERVATION);
         JSONObject createdObservation = getObservation();
-        long datastreamId = -1;
+        Object datastreamId = -1;
         try {
-            datastreamId = createdObservation.getJSONObject("Datastream").getLong("@iot.id");
+            datastreamId = createdObservation.getJSONObject("Datastream").get(ControlInformation.ID);
         } catch (JSONException ex) {
             Assert.fail("created observation does not contain @iot.id", ex);
         }
         mqttHelper.publish(MqttHelper.getTopic(EntityType.DATASTREAM, datastreamId, "Observations"), createdObservation.toString());
-        JSONObject latestObservation = entityHelper.getLatestEntity(
+        JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 "$expand=Datastream($select=id),FeatureOfInterest($select=id)&$select=result,phenomenonTime,validTime,parameters");
         Assert.assertTrue(jsonEquals(latestObservation, createdObservation));
@@ -73,15 +76,16 @@ public class Capability7Test {
 
     @Test(description = "Create observation via MQTT using topic [version]/FeatureOfInterests([ID])/Observations", groups = "level-7")
     public void checkCreateObservationViaFeatureOfInterest() {
+        entityHelper.deleteEntityType(EntityType.OBSERVATION);
         JSONObject createdObservation = getObservation();
-        long featureOfInterestId = -1;
+        Object featureOfInterestId = -1;
         try {
-            featureOfInterestId = createdObservation.getJSONObject("FeatureOfInterest").getLong("@iot.id");
+            featureOfInterestId = createdObservation.getJSONObject("FeatureOfInterest").get(ControlInformation.ID);
         } catch (JSONException ex) {
             Assert.fail("created observation does not contain @iot.id", ex);
         }
         mqttHelper.publish(MqttHelper.getTopic(EntityType.FEATURE_OF_INTEREST, featureOfInterestId, "Observations"), createdObservation.toString());
-        JSONObject latestObservation = entityHelper.getLatestEntity(
+        JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 "$expand=Datastream($select=id),FeatureOfInterest($select=id)&$select=result,phenomenonTime,validTime,parameters");
         Assert.assertTrue(jsonEquals(latestObservation, createdObservation));
@@ -89,10 +93,11 @@ public class Capability7Test {
 
     @Test(description = "Create observation with deep insert via MQTT on observation entity set (topic: [version]/Observations", groups = "level-7")
     public void checkCreateObservationWithDeepInsert() {
+        entityHelper.deleteEntityType(EntityType.OBSERVATION);
         JSONObject createdObservation = getObservationWithDeepInsert();
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
         String rgr = expandQueryFromJsonObjet(createdObservation);
-        JSONObject latestObservation = entityHelper.getLatestEntity(
+        JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 expandQueryFromJsonObjet(createdObservation));
         Assert.assertTrue(jsonEquals(latestObservation, createdObservation));
@@ -199,7 +204,8 @@ public class Capability7Test {
                     }
                 } else if (val1 instanceof JSONArray) {
                     JSONArray arr1 = (JSONArray) val1;
-                    if (!jsonEquals(arr1.toJSONObject(arr1), obj2.getJSONArray(key).toJSONObject(obj2.getJSONArray(key)))) {
+                    JSONArray arr2 = obj2.getJSONArray(key);
+                    if (!jsonEquals(arr1, arr2)) {
                         return false;
                     }
                 } // check here for properties ending on 'time"
@@ -211,6 +217,27 @@ public class Capability7Test {
                     return false;
                 }
             } catch (JSONException ex) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean jsonEquals(JSONArray arr1, JSONArray arr2) {
+        if (arr1.length() != arr2.length()) {
+            return false;
+        }
+        for (int i = 0; i < arr1.length(); i++) {
+            Object val1 = arr1.get(i);
+            if (val1 instanceof JSONObject) {
+                if (!jsonEquals((JSONObject) val1, arr2.getJSONObject(i))) {
+                    return false;
+                }
+            } else if (val1 instanceof JSONArray) {
+                if (!jsonEquals((JSONArray) val1, arr2.getJSONArray(i))) {
+                    return false;
+                }
+            } else if (!val1.equals(arr2.get(i))) {
                 return false;
             }
         }
@@ -237,11 +264,11 @@ public class Capability7Test {
 
     private JSONObject getObservation() {
         long value = new Random().nextLong();
-        long thingId = entityHelper.createThing();
-        long observedPropertyId = entityHelper.createObservedProperty();
-        long sensorId = entityHelper.createSensor();
-        long datastreamId = entityHelper.createDatastream(thingId, observedPropertyId, sensorId);
-        long featureOfInterestId = entityHelper.createFeatureOfInterest();
+        Object thingId = entityHelper.createThing();
+        Object observedPropertyId = entityHelper.createObservedProperty();
+        Object sensorId = entityHelper.createSensor();
+        Object datastreamId = entityHelper.createDatastream(thingId, observedPropertyId, sensorId);
+        Object featureOfInterestId = entityHelper.createFeatureOfInterest();
         try {
             return new JSONObject("{\n"
                     + "  \"phenomenonTime\": \"2015-03-01T02:40:00+02:00\",\n"

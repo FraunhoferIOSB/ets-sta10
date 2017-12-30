@@ -3,6 +3,7 @@ package org.opengis.cite.sta10.util;
 import de.fraunhofer.iosb.ilt.sta.ServiceFailureException;
 import de.fraunhofer.iosb.ilt.sta.dao.BaseDao;
 import de.fraunhofer.iosb.ilt.sta.model.Entity;
+import de.fraunhofer.iosb.ilt.sta.model.Id;
 import de.fraunhofer.iosb.ilt.sta.model.ext.EntityList;
 import de.fraunhofer.iosb.ilt.sta.service.SensorThingsService;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class EntityUtils {
     /**
      * Checks if the list contains all the given entities exactly once.
      *
-     * @param result the result to check.
+     * @param result     the result to check.
      * @param entityList the expected entities.
      * @return the result of the comparison.
      */
@@ -76,7 +77,7 @@ public class EntityUtils {
     }
 
     public static Entity findEntityIn(Entity entity, List<? extends Entity> entities) {
-        Long id = entity.getId();
+        Id id = entity.getId();
         for (Entity inList : entities) {
             if (Objects.equals(inList.getId(), id)) {
                 return inList;
@@ -94,7 +95,7 @@ public class EntityUtils {
         deleteAll(sts.observations());
     }
 
-    public static <T extends Entity> void deleteAll(BaseDao<T> doa) throws ServiceFailureException {
+    public static <T extends Entity<T>> void deleteAll(BaseDao<T> doa) throws ServiceFailureException {
         boolean more = true;
         int count = 0;
         while (more) {
@@ -117,12 +118,12 @@ public class EntityUtils {
      * the count for paths like /Datastreams(xxx)/Thing/Locations since the id
      * of the Thing can not be determined from the path.
      *
-     * @param request The request to determine the count for.
+     * @param request      The request to determine the count for.
      * @param entityCounts The object holding the entity counts.
      * @return The expected count for the given request.
      */
     public static long findCountForRequest(Request request, EntityCounts entityCounts) {
-        long parentId = -1;
+        Object parentId = -1;
         long count = -1;
         EntityType parentType = null;
         for (PathElement element : request.getPath()) {
@@ -152,8 +153,8 @@ public class EntityUtils {
     /**
      * Checks the given response against the given request.
      *
-     * @param response The response object to check.
-     * @param request The request to check the response against.
+     * @param response     The response object to check.
+     * @param request      The request to check the response against.
      * @param entityCounts The object with the expected entity counts.
      */
     public static void checkResponse(JSONObject response, Request request, EntityCounts entityCounts) {
@@ -211,8 +212,8 @@ public class EntityUtils {
      * Check a collection from a response, against the given expand as present
      * in the request.
      *
-     * @param collection The collection of items to check.
-     * @param expand The expand that led to the collection.
+     * @param collection   The collection of items to check.
+     * @param expand       The expand that led to the collection.
      * @param entityCounts The object with the expected entity counts.
      * @throws JSONException if there is a problem with the json.
      */
@@ -228,8 +229,8 @@ public class EntityUtils {
     /**
      * Check the given entity from a response against the given expand.
      *
-     * @param entity The entity to check.
-     * @param expand The expand that led to the entity.
+     * @param entity       The entity to check.
+     * @param expand       The expand that led to the entity.
      * @param entityCounts The object with the expected entity counts.
      * @throws JSONException if there is a problem with the json.
      */
@@ -270,7 +271,7 @@ public class EntityUtils {
         }
 
         // Entity id in case we need to check counts.
-        long entityId = entity.optLong("@iot.id", -1);
+        Object entityId = entity.opt("@iot.id");
 
         // Check expand
         List<String> relations = new ArrayList<>(entityType.getRelations());

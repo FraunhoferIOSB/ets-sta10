@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.receiveUpdatesViaMQTT.DeepInsertInfo;
+import static org.opengis.cite.sta10.util.Utils.quoteIdForJson;
 import org.testng.Assert;
 
 /**
@@ -33,6 +34,7 @@ import org.testng.Assert;
 public class EntityHelper {
 
     private final String rootUri;
+    private Map<EntityType, Object> latestEntities = new HashMap<>();
 
     public EntityHelper(String rootUri) {
         this.rootUri = rootUri;
@@ -44,10 +46,12 @@ public class EntityHelper {
         }
         int idx = s2.length();
         try {
-            while (!s1.endsWith(s2.substring(0, idx--))) ;
+            while (!s1.endsWith(s2.substring(0, idx))) {
+                idx--;
+            }
         } catch (Exception e) {
         }
-        return s1 + s2.substring(idx + 1);
+        return s1 + s2.substring(idx);
     }
 
     public void deleteEverything() {
@@ -66,17 +70,17 @@ public class EntityHelper {
      *
      * @param entityType The entity type from EntityType enum
      */
-    private void deleteEntityType(EntityType entityType) {
+    public void deleteEntityType(EntityType entityType) {
         JSONArray array = null;
         do {
             try {
-                String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
+                String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, null, null, null);
                 Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
                 int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
                 JSONObject result = new JSONObject(responseMap.get("response").toString());
                 array = result.getJSONArray("value");
                 for (int i = 0; i < array.length(); i++) {
-                    long id = array.getJSONObject(i).getLong(ControlInformation.ID);
+                    Object id = array.getJSONObject(i).get(ControlInformation.ID);
                     deleteEntity(entityType, id);
                 }
             } catch (JSONException e) {
@@ -86,7 +90,7 @@ public class EntityHelper {
         } while (array.length() > 0);
     }
 
-    public long createDatastream(long thingId, long observedPropertyId, long sensorId) {
+    public Object createDatastream(Object thingId, Object observedPropertyId, Object sensorId) {
         try {
             String urlParameters = "{\n"
                     + "  \"unitOfMeasurement\": {\n"
@@ -99,19 +103,19 @@ public class EntityHelper {
                     + "  \"phenomenonTime\": \"2014-03-01T13:00:00Z/2015-05-11T15:30:00Z\",\n"
                     + "  \"resultTime\": \"2014-03-01T13:00:00Z/2015-05-11T15:30:00Z\",\n"
                     + "  \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
-                    + "  \"Thing\": { \"@iot.id\": " + thingId + " },\n"
-                    + "  \"ObservedProperty\":{ \"@iot.id\":" + observedPropertyId + "},\n"
-                    + "  \"Sensor\": { \"@iot.id\": " + sensorId + " }\n"
+                    + "  \"Thing\": { \"@iot.id\": " + quoteIdForJson(thingId) + " },\n"
+                    + "  \"ObservedProperty\":{ \"@iot.id\":" + quoteIdForJson(observedPropertyId) + "},\n"
+                    + "  \"Sensor\": { \"@iot.id\": " + quoteIdForJson(sensorId) + " }\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.DATASTREAM, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public Long createDatastreamWithDeepInsert(long thingId) {
+    public Object createDatastreamWithDeepInsert(Object thingId) {
         try {
             String urlParameters = "{\n"
                     + "  \"unitOfMeasurement\": {\n"
@@ -122,7 +126,7 @@ public class EntityHelper {
                     + "  \"name\": \"test datastream.\",\n"
                     + "  \"description\": \"test datastream.\",\n"
                     + "  \"observationType\": \"http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement\",\n"
-                    + "  \"Thing\": { \"@iot.id\": " + thingId + " },\n"
+                    + "  \"Thing\": { \"@iot.id\": " + quoteIdForJson(thingId) + " },\n"
                     + "   \"ObservedProperty\": {\n"
                     + "        \"name\": \"Luminous Flux\",\n"
                     + "        \"definition\": \"http://www.qudt.org/qudt/owl/1.0.0/quantity/Instances.html#LuminousFlux\",\n"
@@ -142,14 +146,14 @@ public class EntityHelper {
                     + "      ]"
                     + "}";
             JSONObject entity = postEntity(EntityType.DATASTREAM, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException ex) {
             Assert.fail("An Exception occurred during testing!", ex);
         }
         return -1l;
     }
 
-    public long createFeatureOfInterest() {
+    public Object createFeatureOfInterest() {
         try {
             String urlParameters = "{\n"
                     + "  \"name\": \"A weather station.\",\n"
@@ -164,64 +168,64 @@ public class EntityHelper {
                     + "  }\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.FEATURE_OF_INTEREST, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public long createHistoricalLocation(long thingId, long locationId) {
+    public Object createHistoricalLocation(Object thingId, Object locationId) {
         try {
             String urlParameters = "{\n"
                     + "  \"time\": \"2015-03-01T00:40:00.000Z\",\n"
-                    + "  \"Thing\":{\"@iot.id\": " + thingId + "},\n"
-                    + "  \"Locations\": [{\"@iot.id\": " + locationId + "}]  \n"
+                    + "  \"Thing\":{\"@iot.id\": " + quoteIdForJson(thingId) + "},\n"
+                    + "  \"Locations\": [{\"@iot.id\": " + quoteIdForJson(locationId) + "}]  \n"
                     + "}";
             JSONObject entity = postEntity(EntityType.HISTORICAL_LOCATION, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public long createLocation(long thingId) {
+    public Object createLocation(Object thingId) {
         try {
             String urlParameters = "{\n"
                     + "  \"name\": \"bow river\",\n"
                     + "  \"description\": \"bow river\",\n"
                     + "  \"encodingType\": \"application/vnd.geo+json\",\n"
-                    + "  \"Things\":[{\"@iot.id\": " + thingId + "}],\n"
+                    + "  \"Things\":[{\"@iot.id\": " + quoteIdForJson(thingId) + "}],\n"
                     + "  \"location\": { \"type\": \"Point\", \"coordinates\": [-114.05, 51.05] }\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.LOCATION, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public long createObservation(long datastreamId, long featureOfInterstId) {
+    public Object createObservation(Object datastreamId, Object featureOfInterstId) {
         try {
             String urlParameters = "{\n"
                     + "  \"phenomenonTime\": \"2015-03-01T00:40:00.000Z\",\n"
                     + "  \"validTime\": \"2016-01-01T02:01:01+01:00/2016-01-02T00:59:59+01:00\",\n"
                     + "  \"result\": 8,\n"
                     + "  \"parameters\":{\"param1\": \"some value1\", \"param2\": \"some value2\"},\n"
-                    + "  \"Datastream\":{\"@iot.id\": " + datastreamId + "},\n"
-                    + "  \"FeatureOfInterest\": {\"@iot.id\": " + featureOfInterstId + "}  \n"
+                    + "  \"Datastream\":{\"@iot.id\": " + quoteIdForJson(datastreamId) + "},\n"
+                    + "  \"FeatureOfInterest\": {\"@iot.id\": " + quoteIdForJson(featureOfInterstId) + "}  \n"
                     + "}";
             JSONObject entity = postEntity(EntityType.OBSERVATION, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public Long createObservationWithDeepInsert(long datastreamId) {
+    public Object createObservationWithDeepInsert(Object datastreamId) {
         try {
             String urlParameters = "{\n"
                     + "  \"phenomenonTime\": \"2015-03-01T00:00:00Z\",\n"
@@ -238,17 +242,17 @@ public class EntityHelper {
                     + "      ]\n"
                     + "    }\n"
                     + "  },\n"
-                    + "  \"Datastream\":{\"@iot.id\": " + datastreamId + "}\n"
+                    + "  \"Datastream\":{\"@iot.id\": " + quoteIdForJson(datastreamId) + "}\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.OBSERVATION, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException ex) {
             Assert.fail("An Exception occurred during testing!", ex);
         }
         return -1l;
     }
 
-    public long createObservedProperty() {
+    public Object createObservedProperty() {
         try {
             String urlParameters = "{\n"
                     + "  \"name\": \"DewPoint Temperature\",\n"
@@ -256,14 +260,14 @@ public class EntityHelper {
                     + "  \"description\": \"The dewpoint temperature is the temperature to which the air must be cooled, at constant pressure, for dew to form. As the grass and other objects near the ground cool to the dewpoint, some of the water vapor in the atmosphere condenses into liquid water on the objects.\"\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.OBSERVED_PROPERTY, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public long createSensor() {
+    public Object createSensor() {
         try {
             String urlParameters = "{\n"
                     + "  \"name\": \"Fuguro Barometer\",\n"
@@ -272,28 +276,28 @@ public class EntityHelper {
                     + "  \"metadata\": \"Barometer\"\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.SENSOR, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public long createThing() {
+    public Object createThing() {
         try {
             String urlParameters = "{"
                     + "\"name\":\"Test Thing\","
                     + "\"description\":\"This is a Test Thing From TestNG\""
                     + "}";
             JSONObject entity = postEntity(EntityType.THING, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
         return -1;
     }
 
-    public Long createThingWithDeepInsert() {
+    public Object createThingWithDeepInsert() {
         try {
             String urlParameters = "{\n"
                     + "  \"name\": \"Office Building\",\n"
@@ -334,14 +338,14 @@ public class EntityHelper {
                     + "  ]\n"
                     + "}";
             JSONObject entity = postEntity(EntityType.THING, urlParameters);
-            return entity.getLong(ControlInformation.ID);
+            return entity.get(ControlInformation.ID);
         } catch (JSONException ex) {
             Assert.fail("An Exception occurred during testing!", ex);
         }
         return -1l;
     }
 
-    public void deleteEntity(EntityType entityType, long id) {
+    public void deleteEntity(EntityType entityType, Object id) {
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, null, null);
         Map<String, Object> responseMap = HTTPMethods.doDelete(urlString);
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
@@ -378,8 +382,8 @@ public class EntityHelper {
         return result;
     }
 
-    public JSONObject getEntity(EntityType entityType, long id) {
-        if (id == -1) {
+    public JSONObject getEntity(EntityType entityType, Object id) {
+        if (id == null) {
             return null;
         }
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, null, null);
@@ -401,12 +405,12 @@ public class EntityHelper {
         }
     }
 
-    public JSONObject getLatestEntity(EntityType entityType) {
-        return getLatestEntity(entityType, null);
+    public Object getLastestEntityId(EntityType entityType) {
+        return latestEntities.get(entityType);
     }
 
-    public JSONObject getLatestEntity(EntityType entityType, String queryOptions) {
-        String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null) + "?$orderby=id%20desc&$top=1";
+    public JSONObject getAnyEntity(EntityType entityType, String queryOptions) {
+        String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, null, null, null) + "?$top=1";
         if (queryOptions != null && !queryOptions.isEmpty()) {
             urlString += "&" + queryOptions;
         }
@@ -445,7 +449,7 @@ public class EntityHelper {
         }
     }
 
-    public JSONObject patchEntity(EntityType entityType, Map<String, Object> changes, long id) {
+    public JSONObject patchEntity(EntityType entityType, Map<String, Object> changes, Object id) {
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, null, null);
         try {
             Map<String, Object> responseMap = HTTPMethods.doPatch(urlString, new JSONObject(changes).toString());
@@ -462,7 +466,7 @@ public class EntityHelper {
         }
     }
 
-    public JSONObject putEntity(EntityType entityType, Map<String, Object> changes, long id) {
+    public JSONObject putEntity(EntityType entityType, Map<String, Object> changes, Object id) {
         String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, id, null, null);
         try {
             JSONObject entity = getEntity(entityType, id);
@@ -483,11 +487,13 @@ public class EntityHelper {
         }
     }
 
-    public JSONObject updateEntitywithPATCH(EntityType entityType, long id) {
+    public JSONObject updateEntitywithPATCH(EntityType entityType, Object id) {
+        latestEntities.put(entityType, id);
         return patchEntity(entityType, getEntityChanges(entityType), id);
     }
 
-    public JSONObject updateEntitywithPUT(EntityType entityType, long id) {
+    public JSONObject updateEntitywithPUT(EntityType entityType, Object id) {
+        latestEntities.put(entityType, id);
         return putEntity(entityType, getEntityChanges(entityType), id);
     }
 
@@ -609,13 +615,13 @@ public class EntityHelper {
     }
 
     private JSONObject postEntity(EntityType entityType, String urlParameters) {
-        String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
+        String urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, null, null, null);
         try {
             Map<String, Object> responseMap = HTTPMethods.doPost(urlString, urlParameters);
             int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
             Assert.assertEquals(responseCode, 201, "Error during creation of entity " + entityType.name());
             String response = responseMap.get("response").toString();
-            long id = Long.parseLong(response.substring(response.indexOf("(") + 1, response.indexOf(")")));
+            Object id = response.substring(response.indexOf("(") + 1, response.indexOf(")"));
             urlString = urlString + "(" + id + ")";
             responseMap = HTTPMethods.doGet(urlString);
             responseCode = Integer.parseInt(responseMap.get("response-code").toString());

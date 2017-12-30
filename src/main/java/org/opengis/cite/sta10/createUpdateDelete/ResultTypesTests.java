@@ -11,6 +11,7 @@ import de.fraunhofer.iosb.ilt.sta.model.Sensor;
 import de.fraunhofer.iosb.ilt.sta.model.Thing;
 import de.fraunhofer.iosb.ilt.sta.model.ext.UnitOfMeasurement;
 import de.fraunhofer.iosb.ilt.sta.service.SensorThingsService;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -149,7 +150,7 @@ public class ResultTypesTests {
         found = doa.find(b1.getId());
         Assert.assertEquals(found.getResult(), b1.getResult(), "Expected result to be a Number.");
 
-        Observation b2 = new Observation(1.23, datastreams.get(0));
+        Observation b2 = new Observation(BigDecimal.valueOf(1.23), datastreams.get(0));
         doa.create(b2);
         observations.add(b2);
 
@@ -162,7 +163,7 @@ public class ResultTypesTests {
     public void testObjectResult() throws ServiceFailureException {
         ObservationDao doa = service.observations();
         Map<String, Object> result = new HashMap<>();
-        result.put("number", 1.23);
+        result.put("number", BigDecimal.valueOf(1.23));
         result.put("string", "One comma twentythree");
         result.put("boolean", Boolean.TRUE);
         Observation o1 = new Observation(result, datastreams.get(0));
@@ -178,7 +179,7 @@ public class ResultTypesTests {
     public void testArrayResult() throws ServiceFailureException {
         ObservationDao doa = service.observations();
         List<Object> result = new ArrayList<>();
-        result.add(1.23);
+        result.add(BigDecimal.valueOf(1.23));
         result.add("One comma twentythree");
         result.add(Boolean.TRUE);
         Observation o1 = new Observation(result, datastreams.get(0));

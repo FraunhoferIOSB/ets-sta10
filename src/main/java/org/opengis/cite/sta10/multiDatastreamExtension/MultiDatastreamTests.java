@@ -394,7 +394,7 @@ public class MultiDatastreamTests {
             entitiesHaveOneOf(json, "MultiDatastreams", relation + "@iot.navigationLink");
         }
 
-        String urlString = rootUri + "/Observations(" + OBSERVATIONS.get(5).getId() + ")/result[0]";
+        String urlString = rootUri + "/Observations(" + OBSERVATIONS.get(5).getId().getUrl() + ")/result[0]";
         json = getJsonObject(urlString);
         JsonNode value = json.get("result[0]");
         if (value == null || !value.isNumber()) {

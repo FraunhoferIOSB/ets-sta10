@@ -31,6 +31,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.util.EntityType;
+import org.opengis.cite.sta10.util.Utils;
 import org.testng.Assert;
 
 /**
@@ -105,7 +106,7 @@ public class MqttHelper {
         return result;
     }
 
-    public static List<String> getRelativeTopicsForEntity(EntityType entityType, Map<EntityType, Long> ids) {
+    public static List<String> getRelativeTopicsForEntity(EntityType entityType, Map<EntityType, Object> ids) {
         List<String> result = new ArrayList<>();
         switch (entityType) {
             case THING:
@@ -139,7 +140,7 @@ public class MqttHelper {
         return result;
     }
 
-    public static List<String> getRelativeTopicsForEntitySet(EntityType entityType, Map<EntityType, Long> ids) {
+    public static List<String> getRelativeTopicsForEntitySet(EntityType entityType, Map<EntityType, Object> ids) {
         List<String> result = new ArrayList<>();
         switch (entityType) {
             case THING:
@@ -180,12 +181,12 @@ public class MqttHelper {
         return getTopic(entityType) + "?$select=" + selectedProperties.stream().collect(Collectors.joining(","));
     }
 
-    public static String getTopic(EntityType entityType, long id, String property) {
-        return getTopic(entityType) + "(" + id + ")/" + property;
+    public static String getTopic(EntityType entityType, Object id, String property) {
+        return getTopic(entityType) + "(" + Utils.quoteIdForUrl(id) + ")/" + property;
     }
 
-    public static String getTopic(EntityType entityType, long id) {
-        return getTopic(entityType) + "(" + id + ")";
+    public static String getTopic(EntityType entityType, Object id) {
+        return getTopic(entityType) + "(" + Utils.quoteIdForUrl(id) + ")";
     }
 
     public static String getTopic(EntityType entityType) {
@@ -211,7 +212,7 @@ public class MqttHelper {
         }
     }
 
-    private static String getTopic(EntityType entityType, Map<EntityType, Long> ids) {
+    private static String getTopic(EntityType entityType, Map<EntityType, Object> ids) {
         return getTopic(entityType, ids.get(entityType));
     }
 

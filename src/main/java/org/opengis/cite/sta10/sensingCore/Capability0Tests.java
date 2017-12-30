@@ -28,7 +28,7 @@ public class Capability0Tests {
      * class.
      *
      * @param testContext The test context to find out whether this class is
-     * requested to test or not
+     *                    requested to test or not
      */
     @BeforeClass
     public void obtainTestSubject(ITestContext testContext) {
@@ -133,7 +133,7 @@ public class Capability0Tests {
                 + "    }]\n"
                 + "}\n"
                 + "";
-        String urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.THING, -1, null, null);
+        String urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.THING, null, null, null);
         Map<String, Object> responseMap = HTTPMethods.doPost(urlString, urlParameters);
     }
 
@@ -146,7 +146,7 @@ public class Capability0Tests {
     private String getEntities(EntityType entityType) {
         String urlString = rootUri;
         if (entityType != null) {
-            urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, -1, null, null);
+            urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, null, null, null);
         }
         Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
         String response = responseMap.get("response").toString();

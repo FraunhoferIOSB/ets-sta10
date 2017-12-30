@@ -34,6 +34,7 @@ import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.EntityHelper;
 import org.opengis.cite.sta10.util.EntityType;
+import org.opengis.cite.sta10.util.Utils;
 import org.opengis.cite.sta10.util.mqtt.MqttBatchResult;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
 import org.testng.Assert;
@@ -72,7 +73,7 @@ public class Capability8Test {
             EntityType.THING);
 
     private EntityHelper entityHelper;
-    private final Map<EntityType, Long> ids = new HashMap<>();
+    private final Map<EntityType, Object> ids = new HashMap<>();
     private MqttHelper mqttHelper;
     private String rootUri;
 
@@ -80,7 +81,7 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetInsert() {
         deleteCreatedEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
-            MqttBatchResult<Long> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType));
+            MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType));
             ids.put(entityType, result.getActionResult());
             Assert.assertTrue(jsonEqualsWithLinkResolving(entityHelper.getEntity(entityType, result.getActionResult()), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType)));
         });
@@ -111,7 +112,7 @@ public class Capability8Test {
         deleteCreatedEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType);
-            MqttBatchResult<Long> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType, selectedProperties));
+            MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType, selectedProperties));
             ids.put(entityType, result.getActionResult());
             JSONObject entity = entityHelper.getEntity(entityType, result.getActionResult());
             filterEntity(entity, selectedProperties);
@@ -166,7 +167,9 @@ public class Capability8Test {
                 result.getMessages().entrySet().stream().forEach((entry) -> {
                     try {
                         // coudl return multiple results so make sure we only get the latest
-                        JSONObject expectedResult = entityHelper.getEntity(entry.getKey() + "?$orderby=id%20desc&$top=1").getJSONArray("value").getJSONObject(0);
+                        Object lastestId = entityHelper.getLastestEntityId(entityType);
+                        String filter = "id%20eq%20" + Utils.quoteIdForUrl(lastestId);
+                        JSONObject expectedResult = entityHelper.getEntity(entry.getKey() + "?$filter=" + filter).getJSONArray("value").getJSONObject(0);
                         Assert.assertTrue(jsonEqualsWithLinkResolving(expectedResult, entry.getValue(), entry.getKey()));
                     } catch (JSONException ex) {
                         Assert.fail("Could not get expected result for MQTT subscription from server", ex);
@@ -186,7 +189,7 @@ public class Capability8Test {
             deepInsertInfo.getSubEntityTypes().stream().forEach((subType) -> {
                 topics.add(MqttHelper.getTopic(subType));
             });
-            MqttBatchResult<Long> result = mqttHelper.executeRequests(
+            MqttBatchResult<Object> result = mqttHelper.executeRequests(
                     getDeepInsertEntityAction(entityType),
                     topics.toArray(new String[topics.size()]));
             ids.put(entityType, result.getActionResult());
@@ -307,7 +310,7 @@ public class Capability8Test {
      * class. It initializes all objects and connections used within the test.
      *
      * @param testContext The test context to find out whether this class is
-     * requested to test or not
+     *                    requested to test or not
      */
     @BeforeClass
     public void init(ITestContext testContext) {
@@ -369,8 +372,8 @@ public class Capability8Test {
         return entity;
     }
 
-    private Callable<Long> getDeepInsertEntityAction(EntityType entityType) {
-        Callable<Long> trigger = () -> {
+    private Callable<Object> getDeepInsertEntityAction(EntityType entityType) {
+        Callable<Object> trigger = () -> {
             switch (entityType) {
                 case THING:
                     return entityHelper.createThingWithDeepInsert();
@@ -384,8 +387,8 @@ public class Capability8Test {
         return trigger;
     }
 
-    private Callable<Long> getInsertEntityAction(EntityType entityType) {
-        Callable<Long> trigger = () -> {
+    private Callable<Object> getInsertEntityAction(EntityType entityType) {
+        Callable<Object> trigger = () -> {
             switch (entityType) {
                 case THING:
                     return entityHelper.createThing();
@@ -420,8 +423,8 @@ public class Capability8Test {
                 if (relatedType.equals(destinationEntityType)) {
                     return currentElement.path
                             + (currentElement.path.isEmpty()
-                                    ? relation
-                                    : "/" + relation);
+                            ? relation
+                            : "/" + relation);
                 } else {
                     queue.offer(new BFSStructure(relatedType, currentElement.path + (currentElement.path.isEmpty() ? relation : "/" + relation)));
                 }
@@ -439,10 +442,10 @@ public class Capability8Test {
         return selectedProperties;
     }
 
-    private JSONObject getSubEntityByRoot(EntityType rootEntityType, Long rootId, EntityType subtEntityType) {
+    private JSONObject getSubEntityByRoot(EntityType rootEntityType, Object rootId, EntityType subtEntityType) {
         try {
             String path = getPathToRelatedEntity(subtEntityType, rootEntityType);
-            path = "/" + subtEntityType.getRootEntitySet() + "?$count=true&$filter=" + path + "/id%20eq%20" + rootId;
+            path = "/" + subtEntityType.getRootEntitySet() + "?$count=true&$filter=" + path + "/id%20eq%20" + Utils.quoteIdForUrl(rootId);
             JSONObject result = entityHelper.getEntity(path);
             if (result.getInt("@iot.count") != 1) {
                 Assert.fail("Invalid result with size != 1");
@@ -466,6 +469,27 @@ public class Capability8Test {
         return () -> {
             return entityHelper.updateEntitywithPUT(entityType, ids.get(entityType));
         };
+    }
+
+    private boolean jsonEqualsWithLinkResolving(JSONArray arr1, JSONArray arr2, String topic) {
+        if (arr1.length() != arr2.length()) {
+            return false;
+        }
+        for (int i = 0; i < arr1.length(); i++) {
+            Object val1 = arr1.get(i);
+            if (val1 instanceof JSONObject) {
+                if (!jsonEqualsWithLinkResolving((JSONObject) val1, arr2.getJSONObject(i), topic)) {
+                    return false;
+                }
+            } else if (val1 instanceof JSONArray) {
+                if (!jsonEqualsWithLinkResolving((JSONArray) val1, arr2.getJSONArray(i), topic)) {
+                    return false;
+                }
+            } else if (!val1.equals(arr2.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean jsonEqualsWithLinkResolving(JSONObject obj1, JSONObject obj2, String topic) {
@@ -495,7 +519,8 @@ public class Capability8Test {
                     }
                 } else if (val1 instanceof JSONArray) {
                     JSONArray arr1 = (JSONArray) val1;
-                    if (!jsonEqualsWithLinkResolving(arr1.toJSONObject(arr1), obj2.getJSONArray(key).toJSONObject(obj2.getJSONArray(key)), topic)) {
+                    JSONArray arr2 = obj2.getJSONArray(key);
+                    if (!jsonEqualsWithLinkResolving(arr1, arr2, topic)) {
                         return false;
                     }
                 } else if (key.toLowerCase().endsWith("time")) {
@@ -507,11 +532,13 @@ public class Capability8Test {
 
                     String selfLink1 = obj1.getString("@iot.selfLink");
                     URI baseUri1 = URI.create(selfLink1.substring(0, selfLink1.indexOf(version))).resolve(topic);
-                    String absoluteUri1 = baseUri1.resolve(obj1.getString(key)).toString();
+                    String navLink1 = obj1.getString(key);
+                    String absoluteUri1 = baseUri1.resolve(navLink1).toString();
 
                     String selfLink2 = obj2.getString("@iot.selfLink");
                     URI baseUri2 = URI.create(selfLink2.substring(0, selfLink2.indexOf(version))).resolve(topic);
-                    String absoluteUri2 = baseUri2.resolve(obj2.getString(key)).toString();
+                    String navLink2 = obj2.getString(key);
+                    String absoluteUri2 = baseUri2.resolve(navLink2).toString();
                     if (!absoluteUri1.equals(absoluteUri2)) {
                         return false;
                     }
