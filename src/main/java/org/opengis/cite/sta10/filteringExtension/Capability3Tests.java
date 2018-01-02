@@ -1410,9 +1410,14 @@ public class Capability3Tests {
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
             array = new JSONObject(response).getJSONArray("value");
-            datastreamId1 = array.getJSONObject(0).get(ControlInformation.ID);
-            datastreamId2 = array.getJSONObject(1).get(ControlInformation.ID);
-
+            // We can not assume the Datastreams are returned in the order we expect.
+            if ("datastream 1".equals(array.getJSONObject(0).get("name"))) {
+                datastreamId1 = array.getJSONObject(0).get(ControlInformation.ID);
+                datastreamId2 = array.getJSONObject(1).get(ControlInformation.ID);
+            } else {
+                datastreamId1 = array.getJSONObject(1).get(ControlInformation.ID);
+                datastreamId2 = array.getJSONObject(0).get(ControlInformation.ID);
+            }
             urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.DATASTREAM, datastreamId1, EntityType.SENSOR, null);
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
@@ -1508,9 +1513,14 @@ public class Capability3Tests {
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
             array = new JSONObject(response).getJSONArray("value");
-            datastreamId3 = array.getJSONObject(0).get(ControlInformation.ID);
-            datastreamId4 = array.getJSONObject(1).get(ControlInformation.ID);
-
+            // We can not assume the Datastreams are returned in the order we expect.
+            if ("datastream 3".equals(array.getJSONObject(0).get("name"))) {
+                datastreamId3 = array.getJSONObject(0).get(ControlInformation.ID);
+                datastreamId4 = array.getJSONObject(1).get(ControlInformation.ID);
+            } else {
+                datastreamId4 = array.getJSONObject(0).get(ControlInformation.ID);
+                datastreamId3 = array.getJSONObject(1).get(ControlInformation.ID);
+            }
             urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.DATASTREAM, datastreamId3, EntityType.SENSOR, null);
             responseMap = HTTPMethods.doGet(urlString);
             response = responseMap.get("response").toString();
