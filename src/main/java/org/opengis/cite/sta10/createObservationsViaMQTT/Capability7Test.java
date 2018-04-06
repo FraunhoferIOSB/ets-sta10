@@ -46,6 +46,14 @@ public class Capability7Test {
     private EntityHelper entityHelper;
     private String rootUri;
 
+    private static void waitMillis(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+            // rude wakeup
+        }
+    }
+
     @Test(description = "Create observation via MQTT on observation entity set (topic: [version]/Observations", groups = "level-7")
     public void checkCreateObservationDirect() {
         entityHelper.deleteEntityType(EntityType.OBSERVATION);
@@ -65,7 +73,7 @@ public class Capability7Test {
         try {
             datastreamId = createdObservation.getJSONObject("Datastream").get(ControlInformation.ID);
         } catch (JSONException ex) {
-            Assert.fail("created observation does not contain @iot.id", ex);
+            Assert.fail("Datastream of created observation does not contain @iot.id", ex);
         }
         mqttHelper.publish(MqttHelper.getTopic(EntityType.DATASTREAM, datastreamId, "Observations"), createdObservation.toString());
         JSONObject latestObservation = entityHelper.getAnyEntity(
@@ -96,18 +104,21 @@ public class Capability7Test {
         entityHelper.deleteEntityType(EntityType.OBSERVATION);
         JSONObject createdObservation = getObservationWithDeepInsert();
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
-        String rgr = expandQueryFromJsonObjet(createdObservation);
+
+        // Give MQTT time to work.
+        waitMillis(100);
+
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
-                expandQueryFromJsonObjet(createdObservation));
+                expandQueryFromJsonObject(createdObservation));
         Assert.assertTrue(jsonEquals(latestObservation, createdObservation));
     }
 
-    private String expandQueryFromJsonObjet(JSONObject expectedResult) {
-        return expandQueryFromJsonObjet(expectedResult, "&");
+    private String expandQueryFromJsonObject(JSONObject expectedResult) {
+        return expandQueryFromJsonObject(expectedResult, "&");
     }
 
-    private String expandQueryFromJsonObjet(JSONObject expectedResult, String seperator) {
+    private String expandQueryFromJsonObject(JSONObject expectedResult, String seperator) {
         String result = "";
         List<String> selects = new ArrayList<>();
         List<String> expands = new ArrayList<>();
@@ -123,7 +134,7 @@ public class Capability7Test {
             // check if navigationLink or simple property
             if (relationType != null) {
                 try {
-                    expands.add(key + "(" + expandQueryFromJsonObjet(expectedResult.getJSONObject(key), ";") + ")");
+                    expands.add(key + "(" + expandQueryFromJsonObject(expectedResult.getJSONObject(key), ";") + ")");
                 } catch (JSONException ex) {
                     Assert.fail("JSON element addressed by navigationLink is no valid JSON object", ex);
                 }

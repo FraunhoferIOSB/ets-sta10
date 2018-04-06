@@ -77,13 +77,26 @@ public class Capability8Test {
     private MqttHelper mqttHelper;
     private String rootUri;
 
+    private static void waitOneSecond() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            // Rude wakeup
+        }
+    }
+
     @Test(description = "Subcribe to EntitySet and insert Entity", groups = "level-8")
     public void checkSubscribeToEntitySetInsert() {
         deleteCreatedEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType));
             ids.put(entityType, result.getActionResult());
-            Assert.assertTrue(jsonEqualsWithLinkResolving(entityHelper.getEntity(entityType, result.getActionResult()), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType)));
+            assertJsonEqualsWithLinkResolving(
+                    entityHelper.getEntity(entityType, result.getActionResult()),
+                    result.getMessages().values().iterator().next(),
+                    MqttHelper.getTopic(entityType));
         });
     }
 
@@ -91,9 +104,11 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetUpdatePATCH() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePatchEntityAction(entityType), MqttHelper.getTopic(entityType));
-            Assert.assertTrue(jsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType)));
+            assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType));
         });
     }
 
@@ -101,22 +116,26 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetUpdatePUT() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePutEntityAction(entityType), MqttHelper.getTopic(entityType));
-            Assert.assertTrue(jsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType)));
+            assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType));
         });
     }
 
     @Test(description = "Subcribe to EntitySet with multiple $select and insert Entity", groups = "level-8")
     public void checkSubscribeToEntitySetWithMultipleSelectInsert() {
         deleteCreatedEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType);
             MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType, selectedProperties));
             ids.put(entityType, result.getActionResult());
             JSONObject entity = entityHelper.getEntity(entityType, result.getActionResult());
             filterEntity(entity, selectedProperties);
-            Assert.assertTrue(jsonEqualsWithLinkResolving(entity, result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties)));
+            assertJsonEqualsWithLinkResolving(entity, result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
         });
     }
 
@@ -124,6 +143,8 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetWithMultipleSelectUpdatePATCH() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType);
 
@@ -133,7 +154,7 @@ public class Capability8Test {
                         return entityHelper.patchEntity(entityType, changes, ids.get(entityType));
                     },
                     MqttHelper.getTopic(entityType, selectedProperties));
-            Assert.assertTrue(jsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties)));
+            assertJsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
         });
     }
 
@@ -141,6 +162,8 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetWithMultipleSelectUpdatePUT() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType);
 
@@ -150,7 +173,7 @@ public class Capability8Test {
                         return entityHelper.putEntity(entityType, changes, ids.get(entityType));
                     },
                     MqttHelper.getTopic(entityType, selectedProperties));
-            Assert.assertTrue(jsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties)));
+            assertJsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
         });
     }
 
@@ -158,6 +181,8 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetWithRelativeTopicUpdatePUT() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> relativeTopics = MqttHelper.getRelativeTopicsForEntitySet(entityType, ids);
             if (!(relativeTopics.isEmpty())) {
@@ -170,7 +195,7 @@ public class Capability8Test {
                         Object lastestId = entityHelper.getLastestEntityId(entityType);
                         String filter = "id%20eq%20" + Utils.quoteIdForUrl(lastestId);
                         JSONObject expectedResult = entityHelper.getEntity(entry.getKey() + "?$filter=" + filter).getJSONArray("value").getJSONObject(0);
-                        Assert.assertTrue(jsonEqualsWithLinkResolving(expectedResult, entry.getValue(), entry.getKey()));
+                        assertJsonEqualsWithLinkResolving(expectedResult, entry.getValue(), entry.getKey());
                     } catch (JSONException ex) {
                         Assert.fail("Could not get expected result for MQTT subscription from server", ex);
                     }
@@ -182,6 +207,8 @@ public class Capability8Test {
     @Test(description = "Subcribe to multiple EntitySets and deep insert multiple entites", groups = "level-8")
     public void checkSubscribeToEntitySetsWithDeepInsert() {
         deleteCreatedEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_DEEP_INSERT.stream().forEach((EntityType entityType) -> {
             DeepInsertInfo deepInsertInfo = entityHelper.getDeepInsertInfo(entityType);
             List<String> topics = new ArrayList<>(deepInsertInfo.getSubEntityTypes().size() + 1);
@@ -198,14 +225,14 @@ public class Capability8Test {
             if (!rootResult.isPresent()) {
                 Assert.fail("Deep insert MQTT result is missing root entity");
             }
-            Assert.assertTrue(jsonEqualsWithLinkResolving(entity, rootResult.get(), MqttHelper.getTopic(deepInsertInfo.getEntityType())));
+            assertJsonEqualsWithLinkResolving(entity, rootResult.get(), MqttHelper.getTopic(deepInsertInfo.getEntityType()));
             deepInsertInfo.getSubEntityTypes().stream().forEach((subType) -> {
                 JSONObject subEntity = getSubEntityByRoot(deepInsertInfo.getEntityType(), result.getActionResult(), subType);
                 Optional<JSONObject> subResult = result.getMessages().entrySet().stream().filter(x -> x.getKey().equals(MqttHelper.getTopic(subType))).map(x -> x.getValue()).findFirst();
                 if (!subResult.isPresent()) {
                     Assert.fail("Deep insert MQTT result is missing entity " + subEntity.toString());
                 }
-                Assert.assertTrue(jsonEqualsWithLinkResolving(subEntity, subResult.get(), MqttHelper.getTopic(subType)));
+                assertJsonEqualsWithLinkResolving(subEntity, subResult.get(), MqttHelper.getTopic(subType));
             });
         });
     }
@@ -214,9 +241,11 @@ public class Capability8Test {
     public void checkSubscribeToEntityUpdatePATCH() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePatchEntityAction(entityType), MqttHelper.getTopic(entityType, ids.get(entityType)));
-            Assert.assertTrue(jsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType))));
+            assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType)));
         });
     }
 
@@ -224,9 +253,11 @@ public class Capability8Test {
     public void checkSubscribeToEntityUpdatePUT() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePutEntityAction(entityType), MqttHelper.getTopic(entityType, ids.get(entityType)));
-            Assert.assertTrue(jsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType))));
+            assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType)));
         });
     }
 
@@ -234,6 +265,8 @@ public class Capability8Test {
     public void checkSubscribeToEntityWithRelativeTopicUpdatePUT() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> relativeTopics = MqttHelper.getRelativeTopicsForEntity(entityType, ids);
             if (!(relativeTopics.isEmpty())) {
@@ -242,7 +275,7 @@ public class Capability8Test {
                         relativeTopics.toArray(new String[relativeTopics.size()]));
                 result.getMessages().entrySet().stream().forEach((entry) -> {
                     JSONObject expectedResult = entityHelper.getEntity(entry.getKey());
-                    Assert.assertTrue(jsonEqualsWithLinkResolving(expectedResult, entry.getValue(), entry.getKey()));
+                    assertJsonEqualsWithLinkResolving(expectedResult, entry.getValue(), entry.getKey());
                 });
             }
         });
@@ -252,6 +285,8 @@ public class Capability8Test {
     public void checkSubscribeToPropertyUpdatePATCH() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
             for (String property : entityType.getPropertyNames()) {
@@ -267,7 +302,7 @@ public class Capability8Test {
                             return entityHelper.patchEntity(entityType, propertyChange, ids.get(entityType));
                         },
                         MqttHelper.getTopic(entityType, ids.get(entityType), property));
-                Assert.assertTrue(jsonEqualsWithLinkResolving(new JSONObject(propertyChange), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType), property)));
+                assertJsonEqualsWithLinkResolving(new JSONObject(propertyChange), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType), property));
             }
         });
     }
@@ -276,6 +311,8 @@ public class Capability8Test {
     public void checkSubscribeToPropertyUpdatePUT() {
         deleteCreatedEntities();
         createEntities();
+        // Give the server a second to send out the messages created by the setup.
+        waitOneSecond();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
             for (String property : entityType.getPropertyNames()) {
@@ -291,7 +328,7 @@ public class Capability8Test {
                             return entityHelper.putEntity(entityType, propertyChange, ids.get(entityType));
                         },
                         MqttHelper.getTopic(entityType, ids.get(entityType), property));
-                Assert.assertTrue(jsonEqualsWithLinkResolving(new JSONObject(propertyChange), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType), property)));
+                assertJsonEqualsWithLinkResolving(new JSONObject(propertyChange), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType), property));
             }
         });
     }
@@ -471,7 +508,16 @@ public class Capability8Test {
         };
     }
 
-    private boolean jsonEqualsWithLinkResolving(JSONArray arr1, JSONArray arr2, String topic) {
+    private static void assertJsonEqualsWithLinkResolving(JSONObject expected, JSONObject received, String topic) {
+        String message = "";
+        boolean equals = jsonEqualsWithLinkResolving(expected, received, topic);
+        if (!equals) {
+            message = "Expected " + expected.toString() + " got " + received.toString() + " for topic " + topic;
+        }
+        Assert.assertTrue(equals, message);
+    }
+
+    private static boolean jsonEqualsWithLinkResolving(JSONArray arr1, JSONArray arr2, String topic) {
         if (arr1.length() != arr2.length()) {
             return false;
         }
@@ -492,7 +538,7 @@ public class Capability8Test {
         return true;
     }
 
-    private boolean jsonEqualsWithLinkResolving(JSONObject obj1, JSONObject obj2, String topic) {
+    private static boolean jsonEqualsWithLinkResolving(JSONObject obj1, JSONObject obj2, String topic) {
         if (obj1 == obj2) {
             return true;
         }

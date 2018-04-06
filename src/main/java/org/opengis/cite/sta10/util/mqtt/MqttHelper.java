@@ -16,6 +16,7 @@
 package org.opengis.cite.sta10.util.mqtt;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +90,7 @@ public class MqttHelper {
             try {
                 result.setActionResult(action.call());
             } catch (Exception ex) {
-                Assert.fail("Error executing : " + ex.getMessage(), ex);
+                Assert.fail("Topics: " + Arrays.toString(topics) + " Error executing : " + ex.getMessage(), ex);
             }
             executor.shutdown();
             if (!executor.awaitTermination(mqttTimeout, TimeUnit.MILLISECONDS)) {
@@ -99,7 +100,7 @@ public class MqttHelper {
                 result.addMessage(entry.getKey(), entry.getValue().get());
             }
         } catch (InterruptedException | ExecutionException ex) {
-            Assert.fail("Error subscribing to MQTT.", ex);
+            Assert.fail("Topics: " + Arrays.toString(topics) + " Error subscribing to MQTT: " + ex.getMessage(), ex);
         } finally {
             executor.shutdownNow();
         }

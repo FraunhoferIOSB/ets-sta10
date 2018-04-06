@@ -415,7 +415,8 @@ public class EntityHelper {
             urlString += "&" + queryOptions;
         }
         try {
-            return new JSONObject(HTTPMethods.doGet(urlString).get("response").toString()).getJSONArray("value").getJSONObject(0);
+            String json = HTTPMethods.doGet(urlString).get("response").toString();
+            return new JSONObject(json).getJSONArray("value").getJSONObject(0);
         } catch (JSONException e) {
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
             return null;
