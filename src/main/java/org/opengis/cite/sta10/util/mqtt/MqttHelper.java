@@ -47,6 +47,14 @@ public class MqttHelper {
     private final String mqttServerUri;
     private final long mqttTimeout;
 
+    public static void waitMillis(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+            // rude wakeup
+        }
+    }
+
     public MqttHelper(String mqttServerUri, long mqttTimeout) {
         this.mqttServerUri = mqttServerUri;
         this.mqttTimeout = mqttTimeout;
@@ -87,6 +95,10 @@ public class MqttHelper {
                 listener.connect();
                 tempResult.put(topic, executor.submit(listener));
             }
+
+            // Give the MQTT server time to process the subscriptions.
+            waitMillis(200);
+
             try {
                 result.setActionResult(action.call());
             } catch (Exception ex) {

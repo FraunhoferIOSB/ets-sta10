@@ -117,7 +117,7 @@ public class MqttListener implements Callable<JSONObject> {
         try {
             barrier.await();
         } catch (InterruptedException ex) {
-            Assert.fail("waiting for MQTT events exceeded time limit.", ex);
+            Assert.fail("waiting for MQTT events on " + topic + " timed out.", ex);
             throw ex;
         } finally {
             if (mqttClient != null) {

@@ -30,6 +30,7 @@ import org.opengis.cite.sta10.util.ControlInformation;
 import org.opengis.cite.sta10.util.EntityHelper;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
+import static org.opengis.cite.sta10.util.mqtt.MqttHelper.waitMillis;
 import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
@@ -46,19 +47,15 @@ public class Capability7Test {
     private EntityHelper entityHelper;
     private String rootUri;
 
-    private static void waitMillis(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ex) {
-            // rude wakeup
-        }
-    }
-
     @Test(description = "Create observation via MQTT on observation entity set (topic: [version]/Observations", groups = "level-7")
     public void checkCreateObservationDirect() {
         entityHelper.deleteEntityType(EntityType.OBSERVATION);
         JSONObject createdObservation = getObservation();
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
+
+        // Give MQTT time to work.
+        waitMillis(200);
+
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 "$expand=Datastream($select=id),FeatureOfInterest($select=id)&$select=result,phenomenonTime,validTime,parameters");
@@ -76,6 +73,10 @@ public class Capability7Test {
             Assert.fail("Datastream of created observation does not contain @iot.id", ex);
         }
         mqttHelper.publish(MqttHelper.getTopic(EntityType.DATASTREAM, datastreamId, "Observations"), createdObservation.toString());
+
+        // Give MQTT time to work.
+        waitMillis(200);
+
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 "$expand=Datastream($select=id),FeatureOfInterest($select=id)&$select=result,phenomenonTime,validTime,parameters");
@@ -93,6 +94,10 @@ public class Capability7Test {
             Assert.fail("created observation does not contain @iot.id", ex);
         }
         mqttHelper.publish(MqttHelper.getTopic(EntityType.FEATURE_OF_INTEREST, featureOfInterestId, "Observations"), createdObservation.toString());
+
+        // Give MQTT time to work.
+        waitMillis(200);
+
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
                 "$expand=Datastream($select=id),FeatureOfInterest($select=id)&$select=result,phenomenonTime,validTime,parameters");
@@ -106,7 +111,7 @@ public class Capability7Test {
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
 
         // Give MQTT time to work.
-        waitMillis(100);
+        waitMillis(200);
 
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
