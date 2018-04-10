@@ -123,13 +123,19 @@ public class Capability8Test {
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             // Give the server a second to send out all the messages created by the setup or previous call.
             waitMillis(200);
-            List<String> selectedProperties = getSelectedProperties(entityType);
-            MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType, selectedProperties));
-            ids.put(entityType, result.getActionResult());
-            JSONObject entity = entityHelper.getEntity(entityType, result.getActionResult());
-            filterEntity(entity, selectedProperties);
-            assertJsonEqualsWithLinkResolving(entity, result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
+            List<String> selectedProperties = getSelectedProperties(entityType, true);
+            checkSubscribeSelectInsert(entityType, selectedProperties);
+            selectedProperties = getSelectedProperties(entityType, false);
+            checkSubscribeSelectInsert(entityType, selectedProperties);
         });
+    }
+
+    private void checkSubscribeSelectInsert(EntityType entityType, List<String> selectedProperties) {
+        MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType, selectedProperties));
+        ids.put(entityType, result.getActionResult());
+        JSONObject entity = entityHelper.getEntity(entityType, result.getActionResult());
+        filterEntity(entity, selectedProperties);
+        assertJsonEqualsWithLinkResolving(entity, result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
     }
 
     @Test(description = "Subcribe to EntitySet with multiple $select and update (PATCH) Entity", groups = "level-8")
@@ -139,16 +145,21 @@ public class Capability8Test {
         // Give the server a second to send out the messages created by the setup.
         waitMillis(500);
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
-            List<String> selectedProperties = getSelectedProperties(entityType);
-
-            Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
-            MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
-                    () -> {
-                        return entityHelper.patchEntity(entityType, changes, ids.get(entityType));
-                    },
-                    MqttHelper.getTopic(entityType, selectedProperties));
-            assertJsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
+            List<String> selectedProperties = getSelectedProperties(entityType, true);
+            checkSubscribePatch(entityType, selectedProperties);
+            selectedProperties = getSelectedProperties(entityType, false);
+            checkSubscribePatch(entityType, selectedProperties);
         });
+    }
+
+    private void checkSubscribePatch(EntityType entityType, List<String> selectedProperties) {
+        Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
+        MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
+                () -> {
+                    return entityHelper.patchEntity(entityType, changes, ids.get(entityType));
+                },
+                MqttHelper.getTopic(entityType, selectedProperties));
+        assertJsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
     }
 
     @Test(description = "Subcribe to EntitySet with multiple $select and update (PUT) Entity", groups = "level-8")
@@ -158,16 +169,21 @@ public class Capability8Test {
         // Give the server a second to send out the messages created by the setup.
         waitMillis(500);
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
-            List<String> selectedProperties = getSelectedProperties(entityType);
-
-            Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
-            MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
-                    () -> {
-                        return entityHelper.putEntity(entityType, changes, ids.get(entityType));
-                    },
-                    MqttHelper.getTopic(entityType, selectedProperties));
-            assertJsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
+            List<String> selectedProperties = getSelectedProperties(entityType, true);
+            checkSubscribePut(entityType, selectedProperties);
+            selectedProperties = getSelectedProperties(entityType, false);
+            checkSubscribePut(entityType, selectedProperties);
         });
+    }
+
+    private void checkSubscribePut(EntityType entityType, List<String> selectedProperties) {
+        Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
+        MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
+                () -> {
+                    return entityHelper.putEntity(entityType, changes, ids.get(entityType));
+                },
+                MqttHelper.getTopic(entityType, selectedProperties));
+        assertJsonEqualsWithLinkResolving(new JSONObject(changes), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, selectedProperties));
     }
 
     @Test(description = "Subcribe to EntitySet via relative topic", groups = "level-8")
@@ -464,10 +480,17 @@ public class Capability8Test {
         return "";
     }
 
-    private List<String> getSelectedProperties(EntityType entityType) {
+    /**
+     * Returns half of all entity properties of the given Entity Type.
+     *
+     * @param entityType The entity type to get the entity properties for.
+     * @param even       If true, return the even-half of the properties, otherwise the odd-half.
+     * @return a list with the property names of half of the entity properties.
+     */
+    private List<String> getSelectedProperties(EntityType entityType, boolean even) {
         List<String> allProperties = new ArrayList<>(entityType.getPropertyNames());
         List<String> selectedProperties = new ArrayList<>(allProperties.size() / 2);
-        for (int i = 0; i < allProperties.size(); i += 2) {
+        for (int i = even ? 0 : 1; i < allProperties.size(); i += 2) {
             selectedProperties.add(allProperties.get(i));
         }
         return selectedProperties;
