@@ -11,6 +11,7 @@ import de.fraunhofer.iosb.ilt.sta.model.Id;
 import de.fraunhofer.iosb.ilt.sta.model.IdLong;
 import de.fraunhofer.iosb.ilt.sta.model.IdString;
 import de.fraunhofer.iosb.ilt.sta.model.Location;
+import de.fraunhofer.iosb.ilt.sta.model.MultiDatastream;
 import de.fraunhofer.iosb.ilt.sta.model.Observation;
 import de.fraunhofer.iosb.ilt.sta.model.ObservedProperty;
 import de.fraunhofer.iosb.ilt.sta.model.Sensor;
@@ -38,6 +39,7 @@ import org.opengis.cite.sta10.util.ServiceURLBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
+import org.testng.ISuite;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -63,12 +65,14 @@ public class DataArrayTests {
         "validTime",
         "parameters"};
     private String rootUri;
+    boolean hasMultiDatastream;
     private SensorThingsService service;
     private final List<Thing> THINGS = new ArrayList<>();
     private final List<Location> LOCATIONS = new ArrayList<>();
     private final List<Sensor> SENSORS = new ArrayList<>();
     private final List<ObservedProperty> O_PROPS = new ArrayList<>();
     private final List<Datastream> DATASTREAMS = new ArrayList<>();
+    private final List<MultiDatastream> MULTIDATASTREAMS = new ArrayList<>();
     private final List<Observation> OBSERVATIONS = new ArrayList<>();
     private final List<FeatureOfInterest> FEATURES = new ArrayList<>();
 
@@ -78,6 +82,7 @@ public class DataArrayTests {
     @BeforeClass()
     public void setUp(ITestContext testContext) {
         LOGGER.info("Setting up class.");
+        ISuite suite = testContext.getSuite();
         Object obj = testContext.getSuite().getAttribute(
                 SuiteAttribute.LEVEL.getName());
         if ((null != obj)) {
@@ -85,6 +90,9 @@ public class DataArrayTests {
             Assert.assertTrue(level.intValue() > 5,
                     "Conformance level 6 will not be checked since ics = " + level);
         }
+
+        hasMultiDatastream = suite.getXmlSuite().getParameter("hasMultiDatastream") != null;
+        Assert.assertTrue(hasMultiDatastream, "Conformance level 5 not checked since MultiDatastreams not listed in Service Root.");
 
         rootUri = testContext.getSuite().getAttribute(
                 SuiteAttribute.TEST_SUBJECT.getName()).toString();
@@ -135,7 +143,7 @@ public class DataArrayTests {
         service.create(sensor);
         SENSORS.add(sensor);
 
-        ObservedProperty obsProp = new ObservedProperty("Temperature", new URI("http://ucom.org/temperature"), "The temperature of the thing.");
+        ObservedProperty obsProp = new ObservedProperty("Temperature", new URI("http://dbpedia.org/page/Temperature"), "The temperature of the thing.");
         service.create(obsProp);
         O_PROPS.add(obsProp);
 
@@ -184,6 +192,42 @@ public class DataArrayTests {
         o.setFeatureOfInterest(FEATURES.get(1));
         service.create(o);
         OBSERVATIONS.add(o);
+
+        if (hasMultiDatastream) {
+            ObservedProperty obsProp1 = new ObservedProperty("Wind speed", new URI("http://dbpedia.org/page/Wind_speed"), "The wind speed.");
+            service.create(obsProp1);
+            O_PROPS.add(obsProp1);
+
+            ObservedProperty obsProp2 = new ObservedProperty("Wind direction", new URI("http://dbpedia.org/page/Wind_direction"), "The wind direction.");
+            service.create(obsProp2);
+            O_PROPS.add(obsProp2);
+
+            MultiDatastream multiDatastream = new MultiDatastream();
+            multiDatastream.setName("MultiDatastream 1");
+            multiDatastream.setDescription("The wind at thing 1.");
+            multiDatastream.addMultiObservationDataTypes("http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement");
+            multiDatastream.addMultiObservationDataTypes("http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement");
+            multiDatastream.addUnitOfMeasurement(new UnitOfMeasurement("m/s", "m/s", "m/s"));
+            multiDatastream.addUnitOfMeasurement(new UnitOfMeasurement("degrees", "deg", "deg"));
+            multiDatastream.setThing(THINGS.get(0));
+            multiDatastream.setSensor(SENSORS.get(0));
+            multiDatastream.getObservedProperties().add(obsProp1);
+            multiDatastream.getObservedProperties().add(obsProp2);
+            service.create(multiDatastream);
+            MULTIDATASTREAMS.add(multiDatastream);
+
+            o = new Observation(new Double[]{5.0, 45.0}, MULTIDATASTREAMS.get(0));
+            o.setPhenomenonTimeFrom(ZonedDateTime.parse("2016-01-03T01:01:01.000Z"));
+            o.setFeatureOfInterest(FEATURES.get(0));
+            service.create(o);
+            OBSERVATIONS.add(o);
+
+            o = new Observation(new Double[]{6.0, 50.0}, MULTIDATASTREAMS.get(0));
+            o.setPhenomenonTimeFrom(ZonedDateTime.parse("2016-01-04T01:01:01.000Z"));
+            o.setFeatureOfInterest(FEATURES.get(0));
+            service.create(o);
+            OBSERVATIONS.add(o);
+        }
 
     }
 
@@ -396,6 +440,86 @@ public class DataArrayTests {
             return;
         }
         Assert.assertEquals(foiObs7.getId(), foiObs8.getId(), "Autogenerated Features of interest should be equal.");
+    }
+
+    @Test(description = "Test DataArray POST.", groups = "level-6", priority = 1)
+    public void testPostDataArrayMultiDatastream() {
+        if (!hasMultiDatastream) {
+            return;
+        }
+        MultiDatastream mds1 = MULTIDATASTREAMS.get(0);
+        FeatureOfInterest foi1 = FEATURES.get(0);
+        // Try to create four observations
+        // The second one should return "error".
+        String jsonString = "[\n"
+                + "  {\n"
+                + "    \"MultiDatastream\": {\n"
+                + "      \"@iot.id\": " + mds1.getId().getJson() + "\n"
+                + "    },\n"
+                + "    \"components\": [\n"
+                + "      \"phenomenonTime\",\n"
+                + "      \"result\"\n"
+                + "    ],\n"
+                + "    \"dataArray@iot.count\":2,\n"
+                + "    \"dataArray\": [\n"
+                + "      [\n"
+                + "        \"2010-12-23T10:20:00-0700\",\n"
+                + "        [5,20]\n"
+                + "      ],\n"
+                + "      [\n"
+                + "        \"2010-12-23T10:21:00-0700\",\n"
+                + "        30\n"
+                + "      ]\n"
+                + "    ]\n"
+                + "  }"
+                + "]";
+        String urlString = rootUri + "/CreateObservations";
+        Map<String, Object> responseMap = HTTPMethods.doPost(urlString, jsonString);
+        String response = responseMap.get("response").toString();
+        int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
+        Assert.assertEquals(responseCode, 201, "Error posting Observations using Data Array: Code " + responseCode);
+
+        JsonNode json;
+        try {
+            json = new ObjectMapper().readTree(response);
+        } catch (IOException ex) {
+            Assert.fail("Server returned malformed JSON for request: " + urlString, ex);
+            return;
+        }
+
+        if (!json.isArray()) {
+            Assert.fail("Server did not return a JSON array for request: " + urlString);
+        }
+
+        int i = 0;
+        for (JsonNode resultLine : json) {
+            i++;
+            if (!resultLine.isTextual()) {
+                Assert.fail("Server returned a non-text result line for request: " + urlString);
+                return;
+            }
+            String textValue = resultLine.textValue();
+            if (textValue.toLowerCase().startsWith("error") && i != 2) {
+                Assert.fail("Server returned an error for request: " + urlString);
+            }
+            if (!textValue.toLowerCase().startsWith("error") && i == 2) {
+                Assert.fail("Server should have returned an error for non-valid id for request: " + urlString);
+            }
+            if (i == 2) {
+                continue;
+            }
+
+            Id obsId = idFromPostResult(textValue);
+            Observation obs;
+            try {
+                obs = service.observations().find(obsId);
+            } catch (ServiceFailureException ex) {
+                Assert.fail("Failed to retrieve created observation for request: " + urlString);
+                return;
+            }
+
+            OBSERVATIONS.add(obs);
+        }
     }
 
     private Id idFromPostResult(String postResultLine) {
