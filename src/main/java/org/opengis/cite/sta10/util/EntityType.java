@@ -54,6 +54,7 @@ public enum EntityType {
     public final String plural;
     private final List<EntityProperty> properties = new ArrayList<>();
     private final Map<String, EntityProperty> propertiesByName = new HashMap<>();
+    private final Map<String, EntityProperty> editablePropertiesByName = new HashMap<>();
     private final List<String> relations = new ArrayList<>();
 
     private static final Map<String, EntityType> NAMES_MAP = new HashMap<>();
@@ -93,11 +94,11 @@ public enum EntityType {
 
         DATASTREAM.addProperty("name", false, true);
         DATASTREAM.addProperty("description", false, true);
-        DATASTREAM.addProperty("unitOfMeasurement", false, false, "object");
+        DATASTREAM.addProperty("unitOfMeasurement", false, false, true, "object");
         DATASTREAM.addProperty("observationType", false, true);
-        DATASTREAM.addProperty("observedArea", true, false, "object");
-        DATASTREAM.addProperty("phenomenonTime", true, true);
-        DATASTREAM.addProperty("resultTime", true, true);
+        DATASTREAM.addProperty("observedArea", true, false, false, "object");
+        DATASTREAM.addProperty("phenomenonTime", true, true, false, "string");
+        DATASTREAM.addProperty("resultTime", true, true, false, "string");
         DATASTREAM.addRelations(THING.singular, SENSOR.singular, OBSERVED_PROPERTY.singular, OBSERVATION.plural);
 
         FEATURE_OF_INTEREST.addProperty("name", false, true);
@@ -149,6 +150,10 @@ public enum EntityType {
         return propertiesByName.keySet();
     }
 
+    public Set<String> getEditablePropertyNames() {
+        return editablePropertiesByName.keySet();
+    }
+
     public EntityProperty getPropertyForName(String property) {
         return propertiesByName.get(property);
     }
@@ -158,7 +163,7 @@ public enum EntityType {
      * properties and relations. Always returns "id".
      *
      * @param target the list to fill.
-     * @param even if true, the even properties are taken, otherwise the odd.
+     * @param even   if true, the even properties are taken, otherwise the odd.
      */
     public void getHalfPropertiesRelations(List<String> target, final boolean even) {
         target.clear();
@@ -179,15 +184,20 @@ public enum EntityType {
     }
 
     private void addProperty(String name, boolean optional, boolean canSort) {
-        EntityProperty property = new EntityProperty(name, optional, canSort, "string");
-        properties.add(property);
-        propertiesByName.put(name, property);
+        addProperty(name, optional, canSort, true, "string");
     }
 
     private void addProperty(String name, boolean optional, boolean canSort, String jsonType) {
+        addProperty(name, optional, canSort, true, jsonType);
+    }
+
+    private void addProperty(String name, boolean optional, boolean canSort, boolean canEdit, String jsonType) {
         EntityProperty property = new EntityProperty(name, optional, canSort, jsonType);
         properties.add(property);
         propertiesByName.put(name, property);
+        if (canEdit) {
+            editablePropertiesByName.put(name, property);
+        }
     }
 
     private void addRelations(String... relations) {

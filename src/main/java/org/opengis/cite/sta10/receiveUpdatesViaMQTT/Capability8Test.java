@@ -131,6 +131,10 @@ public class Capability8Test {
     }
 
     private void checkSubscribeSelectInsert(EntityType entityType, List<String> selectedProperties) {
+        if (selectedProperties.isEmpty()) {
+            // can't test with no selected properties.
+            return;
+        }
         MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType, selectedProperties));
         ids.put(entityType, result.getActionResult());
         JSONObject entity = entityHelper.getEntity(entityType, result.getActionResult());
@@ -143,7 +147,7 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(1000);
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType, true);
             checkSubscribePatch(entityType, selectedProperties);
@@ -153,6 +157,10 @@ public class Capability8Test {
     }
 
     private void checkSubscribePatch(EntityType entityType, List<String> selectedProperties) {
+        if (selectedProperties.isEmpty()) {
+            // can't test with no selected properties.
+            return;
+        }
         Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
         MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
                 () -> {
@@ -167,7 +175,7 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(1000);
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType, true);
             checkSubscribePut(entityType, selectedProperties);
@@ -177,6 +185,10 @@ public class Capability8Test {
     }
 
     private void checkSubscribePut(EntityType entityType, List<String> selectedProperties) {
+        if (selectedProperties.isEmpty()) {
+            // can't test with no selected properties.
+            return;
+        }
         Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
         MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
                 () -> {
@@ -216,9 +228,10 @@ public class Capability8Test {
     @Test(description = "Subcribe to multiple EntitySets and deep insert multiple entites", groups = "level-8")
     public void checkSubscribeToEntitySetsWithDeepInsert() {
         deleteCreatedEntities();
+        waitMillis(1000);
         ENTITY_TYPES_FOR_DEEP_INSERT.stream().forEach((EntityType entityType) -> {
             // Give the server a second to send out all the messages created by the setup or previous call.
-            waitMillis(200);
+            waitMillis(500);
             DeepInsertInfo deepInsertInfo = entityHelper.getDeepInsertInfo(entityType);
             List<String> topics = new ArrayList<>(deepInsertInfo.getSubEntityTypes().size() + 1);
             topics.add(MqttHelper.getTopic(deepInsertInfo.getEntityType()));
@@ -488,7 +501,7 @@ public class Capability8Test {
      * @return a list with the property names of half of the entity properties.
      */
     private List<String> getSelectedProperties(EntityType entityType, boolean even) {
-        List<String> allProperties = new ArrayList<>(entityType.getPropertyNames());
+        List<String> allProperties = new ArrayList<>(entityType.getEditablePropertyNames());
         List<String> selectedProperties = new ArrayList<>(allProperties.size() / 2);
         for (int i = even ? 0 : 1; i < allProperties.size(); i += 2) {
             selectedProperties.add(allProperties.get(i));
