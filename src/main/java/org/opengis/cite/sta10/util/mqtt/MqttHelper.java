@@ -33,6 +33,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 /**
@@ -41,11 +43,20 @@ import org.testng.Assert;
  */
 public class MqttHelper {
 
+    /**
+     * The number of milliseconds to wait after an insert, to give the server time to process it.
+     */
+    public static final int WAIT_AFTER_INSERT = 500;
     public static final int QOS = 2;
     public final static String CLIENT_ID = "STA-test_suite";
     private static final String MQTT_TOPIC_PREFIX = "v1.0/";
     private final String mqttServerUri;
     private final long mqttTimeout;
+
+    /**
+     * The logger for this class.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(MqttHelper.class);
 
     public static void waitMillis(long millis) {
         try {
@@ -100,6 +111,7 @@ public class MqttHelper {
             waitMillis(200);
 
             try {
+                LOGGER.debug("Calling action...");
                 result.setActionResult(action.call());
             } catch (Exception ex) {
                 Assert.fail("Topics: " + Arrays.toString(topics) + " Error executing : " + ex.getMessage(), ex);

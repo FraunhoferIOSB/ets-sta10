@@ -19,8 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
@@ -31,7 +30,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONObject;
-import org.opengis.cite.sta10.receiveUpdatesViaMQTT.Capability8Test;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 /**
@@ -40,6 +39,10 @@ import org.testng.Assert;
  */
 public class MqttListener implements Callable<JSONObject> {
 
+    /**
+     * The logger for this class.
+     */
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MqttListener.class);
     private final CountDownLatch barrier;
     private final String topic;
     private final String mqttServerUri;
@@ -65,6 +68,7 @@ public class MqttListener implements Callable<JSONObject> {
                     mqttClient.setCallback(new MqttCallback() {
                         @Override
                         public void connectionLost(Throwable thrwbl) {
+                            LOGGER.error("Exception:", thrwbl);
                             Assert.fail("MQTT connection lost.");
                         }
 
@@ -73,6 +77,9 @@ public class MqttListener implements Callable<JSONObject> {
                             if (barrier.getCount() > 0) {
                                 result = new JSONObject(new String(mm.getPayload(), StandardCharsets.UTF_8));
                                 barrier.countDown();
+                                LOGGER.debug("Received on {}. To go: {}", topic, barrier.getCount());
+                            } else {
+                                LOGGER.error("Received on {}. Barrier already empty!", topic);
                             }
                         }
 
@@ -84,30 +91,35 @@ public class MqttListener implements Callable<JSONObject> {
                         mqttClient.subscribe(topic, MqttHelper.QOS, null, new IMqttActionListener() {
                             @Override
                             public void onSuccess(IMqttToken imt) {
+                                LOGGER.debug("Subscribed to {}", topic);
                                 connectBarrier.countDown();
                             }
 
                             @Override
                             public void onFailure(IMqttToken imt, Throwable thrwbl) {
+                                LOGGER.error("Exception:", thrwbl);
                                 Assert.fail("MQTT subscribe failed.", thrwbl);
                             }
                         });
                     } catch (MqttException ex) {
+                        LOGGER.error("Exception:", ex);
                         Assert.fail("Error MQTT subscribe.", ex);
                     }
                 }
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    LOGGER.error("Exception:", exception);
                     Assert.fail("MQTT connect failed.", exception);
                 }
             });
             try {
                 connectBarrier.await();
             } catch (InterruptedException ex) {
-                Logger.getLogger(Capability8Test.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.error("Exception:", ex);
             }
         } catch (MqttException | IllegalArgumentException ex) {
+            LOGGER.error("Exception:", ex);
             Assert.fail("Could not connect to MQTT server.", ex);
         }
     }
@@ -117,70 +129,43 @@ public class MqttListener implements Callable<JSONObject> {
         try {
             barrier.await();
         } catch (InterruptedException ex) {
+            LOGGER.error("waiting for MQTT events on {} timed out.", topic);
+            LOGGER.error("Exception:", ex);
             Assert.fail("waiting for MQTT events on " + topic + " timed out.", ex);
             throw ex;
         } finally {
             if (mqttClient != null) {
+                final CountDownLatch unsubBarrier = new CountDownLatch(1);
+                final CountDownLatch disconnectBarrier = new CountDownLatch(1);
                 if (mqttClient.isConnected()) {
                     mqttClient.unsubscribe(topic, null, new IMqttActionListener() {
                         @Override
                         public void onSuccess(IMqttToken imt) {
-                            try {
-                                mqttClient.disconnect(null, new IMqttActionListener() {
-                                    @Override
-                                    public void onSuccess(IMqttToken imt) {
-                                        try {
-                                            mqttClient.close();
-                                        } catch (MqttException ex) {
-                                            Assert.fail("Error closing MQTT connection.", ex);
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onFailure(IMqttToken imt, Throwable thrwbl) {
-                                        try {
-                                            mqttClient.disconnectForcibly();
-                                            mqttClient.close();
-                                        } catch (MqttException ex) {
-                                            Assert.fail("Error disconnecting MQTT.", ex);
-                                        }
-                                    }
-                                });
-                            } catch (MqttException ex) {
-                                Assert.fail("Error Error disconnecting from MQTT", ex);
-                            }
+                            unsubBarrier.countDown();
                         }
 
                         @Override
-                        public void onFailure(IMqttToken imt, Throwable thrwbl) {
-                            try {
-                                mqttClient.disconnect(null, new IMqttActionListener() {
-                                    @Override
-                                    public void onSuccess(IMqttToken imt) {
-                                        try {
-                                            mqttClient.close();
-                                        } catch (MqttException ex) {
-                                            Assert.fail("Error closing MQTT connection.", ex);
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onFailure(IMqttToken imt, Throwable thrwbl) {
-                                        try {
-                                            mqttClient.disconnectForcibly();
-                                            mqttClient.close();
-                                        } catch (MqttException ex) {
-                                            Assert.fail("Error disconnecting MQTT.", ex);
-                                        }
-                                    }
-                                });
-                            } catch (MqttException ex) {
-                                Assert.fail("Error Error disconnecting from MQTT", ex);
-                            }
+                        public void onFailure(IMqttToken imt, Throwable exception) {
+                            LOGGER.error("Exception:", exception);
+                            unsubBarrier.countDown();
                         }
                     });
+                    unsubBarrier.await(10, TimeUnit.SECONDS);
+                    mqttClient.disconnect(null, new IMqttActionListener() {
+                        @Override
+                        public void onSuccess(IMqttToken asyncActionToken) {
+                            disconnectBarrier.countDown();
+                        }
 
+                        @Override
+                        public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                            LOGGER.error("Exception:", exception);
+                            disconnectBarrier.countDown();
+                        }
+                    });
+                    disconnectBarrier.await(10, TimeUnit.SECONDS);
                 }
+                mqttClient.close();
             }
         }
         return result;

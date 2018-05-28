@@ -30,6 +30,7 @@ import org.opengis.cite.sta10.util.ControlInformation;
 import org.opengis.cite.sta10.util.EntityHelper;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
+import static org.opengis.cite.sta10.util.mqtt.MqttHelper.WAIT_AFTER_INSERT;
 import static org.opengis.cite.sta10.util.mqtt.MqttHelper.waitMillis;
 import org.testng.Assert;
 import org.testng.ITestContext;
@@ -54,7 +55,7 @@ public class Capability7Test {
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
 
         // Give MQTT time to work.
-        waitMillis(200);
+        waitMillis(WAIT_AFTER_INSERT);
 
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
@@ -75,7 +76,7 @@ public class Capability7Test {
         mqttHelper.publish(MqttHelper.getTopic(EntityType.DATASTREAM, datastreamId, "Observations"), createdObservation.toString());
 
         // Give MQTT time to work.
-        waitMillis(200);
+        waitMillis(WAIT_AFTER_INSERT);
 
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
@@ -96,7 +97,7 @@ public class Capability7Test {
         mqttHelper.publish(MqttHelper.getTopic(EntityType.FEATURE_OF_INTEREST, featureOfInterestId, "Observations"), createdObservation.toString());
 
         // Give MQTT time to work.
-        waitMillis(200);
+        waitMillis(WAIT_AFTER_INSERT);
 
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,
@@ -111,7 +112,7 @@ public class Capability7Test {
         mqttHelper.publish(MqttHelper.getTopic(EntityType.OBSERVATION), createdObservation.toString());
 
         // Give MQTT time to work.
-        waitMillis(200);
+        waitMillis(WAIT_AFTER_INSERT);
 
         JSONObject latestObservation = entityHelper.getAnyEntity(
                 EntityType.OBSERVATION,

@@ -37,6 +37,7 @@ import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.Utils;
 import org.opengis.cite.sta10.util.mqtt.MqttBatchResult;
 import org.opengis.cite.sta10.util.mqtt.MqttHelper;
+import static org.opengis.cite.sta10.util.mqtt.MqttHelper.WAIT_AFTER_INSERT;
 import static org.opengis.cite.sta10.util.mqtt.MqttHelper.waitMillis;
 import org.testng.Assert;
 import org.testng.ITestContext;
@@ -82,7 +83,8 @@ public class Capability8Test {
     public void checkSubscribeToEntitySetInsert() {
         deleteCreatedEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<Object> result = mqttHelper.executeRequests(getInsertEntityAction(entityType), MqttHelper.getTopic(entityType));
             ids.put(entityType, result.getActionResult());
@@ -98,7 +100,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePatchEntityAction(entityType), MqttHelper.getTopic(entityType));
             assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType));
@@ -110,7 +113,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePutEntityAction(entityType), MqttHelper.getTopic(entityType));
             assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType));
@@ -122,7 +126,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             // Give the server a second to send out all the messages created by the setup or previous call.
-            waitMillis(200);
+            waitMillis(WAIT_AFTER_INSERT);
+
             List<String> selectedProperties = getSelectedProperties(entityType, true);
             checkSubscribeSelectInsert(entityType, selectedProperties);
             selectedProperties = getSelectedProperties(entityType, false);
@@ -147,7 +152,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(1000);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType, true);
             checkSubscribePatch(entityType, selectedProperties);
@@ -156,12 +162,24 @@ public class Capability8Test {
         });
     }
 
+    private void prunePropertiesToChanges(List<String> selectedProperties, Map<String, Object> changes) {
+        if (changes.size() != selectedProperties.size()) {
+            for (Iterator<String> it = selectedProperties.iterator(); it.hasNext();) {
+                String property = it.next();
+                if (!changes.containsKey(property)) {
+                    it.remove();
+                }
+            }
+        }
+    }
+
     private void checkSubscribePatch(EntityType entityType, List<String> selectedProperties) {
         if (selectedProperties.isEmpty()) {
             // can't test with no selected properties.
             return;
         }
         Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
+        prunePropertiesToChanges(selectedProperties, changes);
         MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
                 () -> {
                     return entityHelper.patchEntity(entityType, changes, ids.get(entityType));
@@ -175,7 +193,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(1000);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> selectedProperties = getSelectedProperties(entityType, true);
             checkSubscribePut(entityType, selectedProperties);
@@ -190,6 +209,7 @@ public class Capability8Test {
             return;
         }
         Map<String, Object> changes = entityHelper.getEntityChanges(entityType, selectedProperties);
+        prunePropertiesToChanges(selectedProperties, changes);
         MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(
                 () -> {
                     return entityHelper.putEntity(entityType, changes, ids.get(entityType));
@@ -203,7 +223,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> relativeTopics = MqttHelper.getRelativeTopicsForEntitySet(entityType, ids);
             if (!(relativeTopics.isEmpty())) {
@@ -228,10 +249,11 @@ public class Capability8Test {
     @Test(description = "Subcribe to multiple EntitySets and deep insert multiple entites", groups = "level-8")
     public void checkSubscribeToEntitySetsWithDeepInsert() {
         deleteCreatedEntities();
-        waitMillis(1000);
+        waitMillis(2000);
         ENTITY_TYPES_FOR_DEEP_INSERT.stream().forEach((EntityType entityType) -> {
             // Give the server a second to send out all the messages created by the setup or previous call.
-            waitMillis(500);
+            waitMillis(WAIT_AFTER_INSERT);
+
             DeepInsertInfo deepInsertInfo = entityHelper.getDeepInsertInfo(entityType);
             List<String> topics = new ArrayList<>(deepInsertInfo.getSubEntityTypes().size() + 1);
             topics.add(MqttHelper.getTopic(deepInsertInfo.getEntityType()));
@@ -265,7 +287,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePatchEntityAction(entityType), MqttHelper.getTopic(entityType, ids.get(entityType)));
             assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType)));
@@ -277,7 +300,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             MqttBatchResult<JSONObject> result = mqttHelper.executeRequests(getUpdatePutEntityAction(entityType), MqttHelper.getTopic(entityType, ids.get(entityType)));
             assertJsonEqualsWithLinkResolving(result.getActionResult(), result.getMessages().values().iterator().next(), MqttHelper.getTopic(entityType, ids.get(entityType)));
@@ -289,7 +313,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             List<String> relativeTopics = MqttHelper.getRelativeTopicsForEntity(entityType, ids);
             if (!(relativeTopics.isEmpty())) {
@@ -309,7 +334,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
             for (String property : entityType.getPropertyNames()) {
@@ -335,7 +361,8 @@ public class Capability8Test {
         deleteCreatedEntities();
         createEntities();
         // Give the server a second to send out the messages created by the setup.
-        waitMillis(500);
+        waitMillis(WAIT_AFTER_INSERT);
+
         ENTITY_TYPES_FOR_CREATE.stream().forEach((entityType) -> {
             Map<String, Object> changes = entityHelper.getEntityChanges(entityType);
             for (String property : entityType.getPropertyNames()) {
