@@ -107,7 +107,7 @@ public class SuiteFixtureListener implements ISuiteListener {
      * Checking the service root URL to be compliant with SensorThings API
      *
      * @param rootUri The root URL for the service under test.
-     * @param params The params map for passing if MultiDatastreams is enabled.
+     * @param params  The params map for passing if MultiDatastreams is enabled.
      * @return If the root URL of the service is not compliant to SensorThings
      * API, it will return the reason it is not compliant. Otherwise it returns
      * empty String.
@@ -189,6 +189,24 @@ public class SuiteFixtureListener implements ISuiteListener {
                 return "The service response for the root URI \"" + rootUri + "\" is not JSON.";
             }
             switch (name) {
+                case "Actuators":
+                    if (!nameUrl.equals(rootUri + "/Actuators")) {
+                        return "The URL for Actuators in Service Root URI is not compliant to SensorThings API.";
+                    }
+                    addedLinks.put(name, true);
+                    break;
+                case "Tasks":
+                    if (!nameUrl.equals(rootUri + "/Tasks")) {
+                        return "The URL for Tasks in Service Root URI is not compliant to SensorThings API.";
+                    }
+                    addedLinks.put(name, true);
+                    break;
+                case "TaskingCapabilities":
+                    if (!nameUrl.equals(rootUri + "/TaskingCapabilities")) {
+                        return "The URL for TaskingCapabilities in Service Root URI is not compliant to SensorThings API.";
+                    }
+                    addedLinks.put(name, true);
+                    break;
                 case "Things":
                     if (!nameUrl.equals(rootUri + "/Things")) {
                         return "The URL for Things in Service Root URI is not compliant to SensorThings API.";
