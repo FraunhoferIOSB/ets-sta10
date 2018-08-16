@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.geojson.Point;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.EntityUtils;
@@ -401,6 +402,8 @@ public class JsonPropertiesTests {
     }
 
     private JsonNode getJsonObjectForResponse(String urlString) {
+        // Ensure [ and ] are urlEncoded.
+        urlString = urlString.replaceAll(Pattern.quote("["), "%5B").replaceAll(Pattern.quote("]"), "%5D");
         Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
         String response = responseMap.get("response").toString();
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
