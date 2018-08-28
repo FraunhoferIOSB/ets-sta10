@@ -112,7 +112,7 @@
     <dependency>
       <groupId>de.fraunhofer.iosb.ilt</groupId>
       <artifactId>FROST-Client</artifactId>
-      <version>0.18-SNAPSHOT</version>
+      <version>0.19-SNAPSHOT</version>
     </dependency>
   </dependencies>
 

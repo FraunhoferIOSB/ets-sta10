@@ -47,7 +47,7 @@ public class Capability1Tests {
         Object obj = suite.getAttribute(SuiteAttribute.LEVEL.getName());
         if ((null != obj)) {
             Integer level = Integer.class.cast(obj);
-            Assert.assertTrue(level.intValue() > 0,
+            Assert.assertTrue(level > 0,
                     "Conformance level 1 will not be checked since ics = " + level);
         }
 
@@ -57,7 +57,7 @@ public class Capability1Tests {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
         hasMultiDatastream = suite.getXmlSuite().getParameter("hasMultiDatastream") != null;
-        new Capability0Tests().obtainTestSubject(testContext);
+        TestEntityCreator.maybeCreateTestEntities(testContext);
     }
 
     /**

@@ -11,35 +11,15 @@ import org.opengis.cite.sta10.util.ServiceURLBuilder;
 import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 /**
  * Creates entities for tests of "A.1 Sensing Core" Conformance class.
  */
-public class Capability0Tests {
+public class TestEntityCreator {
 
-    /**
-     * The root URL of the SensorThings service under the test
-     */
-    public String rootUri;
-
-    /**
-     * This method will be run before starting the test for this conformance
-     * class.
-     *
-     * @param testContext The test context to find out whether this class is
-     *                    requested to test or not
-     */
     @BeforeClass
-    public void obtainTestSubject(ITestContext testContext) {
-        Object obj = testContext.getSuite().getAttribute(
-                SuiteAttribute.LEVEL.getName());
-        if ((null != obj)) {
-            Integer level = Integer.class.cast(obj);
-            Assert.assertTrue(level.intValue() >= 0,
-                    "Conformance level 1 will not be checked since ics = " + level);
-        }
-
+    public static void maybeCreateTestEntities(ITestContext testContext) {
+        String rootUri;
         rootUri = testContext.getSuite().getAttribute(
                 SuiteAttribute.TEST_SUBJECT.getName()).toString();
         rootUri = rootUri.trim();
@@ -50,17 +30,17 @@ public class Capability0Tests {
         // Check if there is data to test on. We check Observation and
         // HistoricalLocation, since if those exist, all other entities should
         // also exist.
-        String responseObservations = getEntities(EntityType.OBSERVATION);
-        String responseHistLocations = getEntities(EntityType.HISTORICAL_LOCATION);
+        String responseObservations = getEntities(rootUri, EntityType.OBSERVATION);
+        String responseHistLocations = getEntities(rootUri, EntityType.HISTORICAL_LOCATION);
         int countObservations = countEntitiesInResponse(responseObservations);
         int countHistLocations = countEntitiesInResponse(responseHistLocations);
         if (countHistLocations == 0 || countObservations == 0) {
             // No data found, insert test data.
-            createTestEntities();
+            createTestEntities(rootUri);
         }
     }
 
-    private void createTestEntities() {
+    private static void createTestEntities(String rootUri) {
         String urlParameters = "{\n"
                 + "  \"description\": \"thing 1\",\n"
                 + "  \"name\": \"thing name 1\",\n"
@@ -149,7 +129,7 @@ public class Capability0Tests {
                 + "}\n"
                 + "";
         String urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.THING, null, null, null);
-        Map<String, Object> responseMap = HTTPMethods.doPost(urlString, urlParameters);
+        HTTPMethods.doPost(urlString, urlParameters);
     }
 
     /**
@@ -158,7 +138,7 @@ public class Capability0Tests {
      * @param entityType Entity type from EntityType enum list
      * @return The response of GET request in string format.
      */
-    private String getEntities(EntityType entityType) {
+    private static String getEntities(String rootUri, EntityType entityType) {
         String urlString = rootUri;
         if (entityType != null) {
             urlString = ServiceURLBuilder.buildURLString(rootUri, entityType, null, null, null);
@@ -168,14 +148,14 @@ public class Capability0Tests {
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
         Assert.assertEquals(responseCode, 200, "Error during getting entities: " + ((entityType != null) ? entityType.name() : "root URI"));
         if (entityType != null) {
-            Assert.assertTrue(response.indexOf("value") != -1, "The GET entities response for entity type \"" + entityType + "\" does not match SensorThings API : missing \"value\" in response.");
+            Assert.assertTrue(response.contains("value"), "The GET entities response for entity type \"" + entityType + "\" does not match SensorThings API : missing \"value\" in response.");
         } else { // GET Service Base URI
-            Assert.assertTrue(response.indexOf("value") != -1, "The GET entities response for service root URI does not match SensorThings API : missing \"value\" in response.");
+            Assert.assertTrue(response.contains("value"), "The GET entities response for service root URI does not match SensorThings API : missing \"value\" in response.");
         }
-        return response.toString();
+        return response;
     }
 
-    private int countEntitiesInResponse(String response) {
+    private static int countEntitiesInResponse(String response) {
         try {
             JSONObject jsonResponse = new JSONObject(response);
             JSONArray entities = jsonResponse.getJSONArray("value");
@@ -187,8 +167,4 @@ public class Capability0Tests {
         return 0;
     }
 
-    @Test(description = "GET Entities", groups = "level-0", priority = -1)
-    public void emptyTest() {
-        // We do not actually test anything here.
-    }
 }
