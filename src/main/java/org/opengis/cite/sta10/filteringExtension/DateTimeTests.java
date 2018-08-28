@@ -484,4 +484,19 @@ public class DateTimeTests {
         }
         return result;
     }
+
+    public static <T extends Entity<T>> List<T> getFromListExcept(List<T> list, int... ids) {
+        List<T> result = new ArrayList<>(list);
+        for (int i : ids) {
+            result.remove(list.get(i));
+        }
+        return result;
+    }
+
+    public static <T extends Entity<T>> List<T> removeFromList(List<T> sourceList, List<T> remaining, int... ids) {
+        for (int i : ids) {
+            remaining.remove(sourceList.get(i));
+        }
+        return remaining;
+    }
 }

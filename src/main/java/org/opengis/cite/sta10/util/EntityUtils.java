@@ -60,18 +60,19 @@ public class EntityUtils {
             LOGGER.info("Result count ({}) not equal to expected count ({})", count, entityList.size());
             return new resultTestResult(false, "Result count " + count + " not equal to expected count (" + entityList.size() + ")");
         }
+        List<? extends Entity> testList = new ArrayList<>(entityList);
         Iterator<? extends Entity> it;
         for (it = result.fullIterator(); it.hasNext();) {
             Entity next = it.next();
-            Entity inList = findEntityIn(next, entityList);
-            if (!entityList.remove(inList)) {
+            Entity inList = findEntityIn(next, testList);
+            if (!testList.remove(inList)) {
                 LOGGER.info("Entity with id {} found in result that is not expected.", next.getId());
                 return new resultTestResult(false, "Entity with id " + next.getId() + " found in result that is not expected.");
             }
         }
-        if (!entityList.isEmpty()) {
+        if (!testList.isEmpty()) {
             LOGGER.info("Expected entity not found in result.");
-            return new resultTestResult(false, entityList.size() + " expected entities not in result.");
+            return new resultTestResult(false, testList.size() + " expected entities not in result.");
         }
         return new resultTestResult(true, "Check ok.");
     }
