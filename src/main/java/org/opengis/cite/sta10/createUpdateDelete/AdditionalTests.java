@@ -4,17 +4,20 @@ import de.fraunhofer.iosb.ilt.sta.ServiceFailureException;
 import de.fraunhofer.iosb.ilt.sta.dao.ObservationDao;
 import de.fraunhofer.iosb.ilt.sta.model.Datastream;
 import de.fraunhofer.iosb.ilt.sta.model.FeatureOfInterest;
+import de.fraunhofer.iosb.ilt.sta.model.HistoricalLocation;
 import de.fraunhofer.iosb.ilt.sta.model.Location;
 import de.fraunhofer.iosb.ilt.sta.model.Observation;
 import de.fraunhofer.iosb.ilt.sta.model.ObservedProperty;
 import de.fraunhofer.iosb.ilt.sta.model.Sensor;
 import de.fraunhofer.iosb.ilt.sta.model.Thing;
+import de.fraunhofer.iosb.ilt.sta.model.builder.HistoricalLocationBuilder;
 import de.fraunhofer.iosb.ilt.sta.model.ext.UnitOfMeasurement;
 import de.fraunhofer.iosb.ilt.sta.service.SensorThingsService;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.geojson.Point;
@@ -69,7 +72,7 @@ public class AdditionalTests {
         try {
             url = new URL(rootUri);
             service = new SensorThingsService(url);
-        } catch (MalformedURLException | URISyntaxException ex) {
+        } catch (MalformedURLException ex) {
             LOGGER.error("Failed to create service uri.", ex);
         } catch (Exception ex) {
             LOGGER.error("Unknown Exception.", ex);
@@ -88,6 +91,7 @@ public class AdditionalTests {
 
     @Test(description = "Test boolean result values.", groups = "level-2")
     public void testMultipleLocations() throws ServiceFailureException, URISyntaxException {
+        EntityUtils.deleteAll(service);
 
         Thing thing = new Thing("Thing 1", "The first thing.");
 
@@ -119,7 +123,60 @@ public class AdditionalTests {
         Observation found;
         found = doa.find(observation.getId());
         FeatureOfInterest featureOfInterest = found.getFeatureOfInterest();
+    }
 
+    @Test
+    public void testHistoricalLocationThing() throws ServiceFailureException {
+        EntityUtils.deleteAll(service);
+
+        // Create a thing
+        Thing thing = new Thing("Thing 1", "The first thing.");
+        service.create(thing);
+
+        // Create three locations.
+        Location location1 = new Location("Location 1.0", "Location Number 1.", "application/vnd.geo+json", new Point(8, 50));
+        Location location2 = new Location("Location 2.0", "Location Number 2.", "application/vnd.geo+json", new Point(8, 51));
+        Location location3 = new Location("Location 3.0", "Location Number 3.", "application/vnd.geo+json", new Point(8, 52));
+        service.create(location1);
+        service.create(location2);
+        service.create(location3);
+
+        // Give the Thing location 1
+        thing.getLocations().add(location1.withOnlyId());
+        service.update(thing);
+
+        // Get the generated HistoricalLocation and change the time to a known value.
+        List<HistoricalLocation> histLocations = thing.historicalLocations().query().list().toList();
+        Assert.assertEquals(histLocations.size(), 1, "Incorrect number of HistoricalLocations for Thing.");
+        HistoricalLocation histLocation = histLocations.get(0);
+        histLocation.setTime(ZonedDateTime.parse("2016-01-01T06:00:00.000Z"));
+        service.update(histLocation);
+
+        // Now create a new HistoricalLocation for the Thing, with a later time.
+        HistoricalLocation histLocation2 = HistoricalLocationBuilder.builder()
+                .location(location2)
+                .time(ZonedDateTime.parse("2016-01-01T07:00:00.000Z"))
+                .thing(thing.withOnlyId())
+                .build();
+        service.create(histLocation2);
+
+        // Check if the Location of the Thing is now Location 2.
+        List<Location> thingLocations = thing.locations().query().list().toList();
+        Assert.assertEquals(thingLocations.size(), 1, "Incorrect number of Locations for Thing.");
+        Assert.assertEquals(thingLocations.get(0), location2);
+
+        // Now create a new HistoricalLocation for the Thing, with an earlier time.
+        HistoricalLocation histLocation3 = HistoricalLocationBuilder.builder()
+                .location(location3)
+                .time(ZonedDateTime.parse("2016-01-01T05:00:00.000Z"))
+                .thing(thing.withOnlyId())
+                .build();
+        service.create(histLocation3);
+
+        // Check if the Location of the Thing is still Location 2.
+        thingLocations = thing.locations().query().list().toList();
+        Assert.assertEquals(thingLocations.size(), 1, "Incorrect number of Locations for Thing.");
+        Assert.assertEquals(thingLocations.get(0), location2);
     }
 
 }
