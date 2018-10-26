@@ -8,9 +8,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -147,30 +147,20 @@ public class HTTPMethods {
         try {
             LOGGER.info("Putting: {}", urlString);
             //Create connection
-            URL url = new URL(urlString);
-            byte[] postData = putBody.getBytes(StandardCharsets.UTF_8);
-            int postDataLength = postData.length;
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setDoOutput(true);
-            connection.setInstanceFollowRedirects(false);
-            connection.setRequestMethod("PUT");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("charset", "utf-8");
-            connection.setRequestProperty("Content-Length", Integer.toString(postDataLength));
-            connection.setUseCaches(false);
-            try (DataOutputStream wr = new DataOutputStream(connection.getOutputStream())) {
-                wr.write(postData);
-            }
+            URI uri = new URI(urlString);
 
-            Map<String, Object> result = new HashMap<String, Object>();
-            result.put("response-code", connection.getResponseCode());
-            if (connection.getResponseCode() == 200) {
-                //Get Response
-                result.put("response", responseToString(connection));
-            } else {
-                result.put("response", "");
-            }
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+            HttpPut request = new HttpPut(uri);
+            StringEntity params = new StringEntity(putBody, ContentType.APPLICATION_JSON);
+            request.setEntity(params);
+            CloseableHttpResponse response = httpClient.execute(request);
+            Map<String, Object> result = new HashMap<>();
+            result.put("response-code", response.getStatusLine().getStatusCode());
+            result.put("response", EntityUtils.toString(response.getEntity()));
+            response.close();
+            httpClient.close();
             return result;
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -235,17 +225,13 @@ public class HTTPMethods {
             StringEntity params = new StringEntity(patchBody, ContentType.APPLICATION_JSON);
             request.setEntity(params);
             CloseableHttpResponse response = httpClient.execute(request);
-            Map<String, Object> result = new HashMap<String, Object>();
+            Map<String, Object> result = new HashMap<>();
             result.put("response-code", response.getStatusLine().getStatusCode());
             result.put("response", EntityUtils.toString(response.getEntity()));
             response.close();
             httpClient.close();
             return result;
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
         }
         return null;

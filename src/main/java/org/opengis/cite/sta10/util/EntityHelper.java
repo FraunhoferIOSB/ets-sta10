@@ -477,7 +477,7 @@ public class EntityHelper {
             }
             Map<String, Object> responseMap = HTTPMethods.doPut(urlString, entity.toString());
             int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
-            Assert.assertEquals(responseCode, 200, "Error during updating(PUT) of entity " + entityType.name());
+            Assert.assertEquals(responseCode, 200, "Error during updating(PUT) of entity " + entityType.name() + ": " + responseMap.get("response"));
             responseMap = HTTPMethods.doGet(urlString);
             JSONObject result = new JSONObject(responseMap.get("response").toString());
             return result;
