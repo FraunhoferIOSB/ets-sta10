@@ -156,7 +156,6 @@ public class ResultTypesTests {
 
         found = doa.find(b2.getId());
         Assert.assertEquals(found.getResult(), b2.getResult(), "Expected result to be a Number.");
-
     }
 
     @Test(description = "Test Object result values.", groups = "level-2")
@@ -189,6 +188,28 @@ public class ResultTypesTests {
         Observation found;
         found = doa.find(o1.getId());
         Assert.assertEquals(found.getResult(), o1.getResult(), "Expected result Arrays are not equal.");
+    }
+
+    @Test(description = "Test null result values.", groups = "level-2")
+    public void testNullResult() throws ServiceFailureException {
+        ObservationDao doa = service.observations();
+        Observation o1 = new Observation(null, datastreams.get(0));
+        doa.create(o1);
+        observations.add(o1);
+
+        Observation found;
+        found = doa.find(o1.getId());
+        Assert.assertEquals(found.getResult(), o1.getResult(), "Expected result to be Null.");
+
+        Observation o2 = new Observation(BigDecimal.valueOf(1.23), datastreams.get(0));
+        doa.create(o2);
+        observations.add(o2);
+
+        o2.setResult(null);
+        doa.update(o2);
+
+        found = doa.find(o2.getId());
+        Assert.assertEquals(found.getResult(), o2.getResult(), "Expected result to be Null.");
     }
 
     public static <T extends Entity<T>> List<T> getFromList(List<T> list, int... ids) {
