@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -249,6 +250,21 @@ public class DataArrayTests {
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
         Assert.assertEquals(responseCode, 200, "Error getting Observations using Data Array: Code " + responseCode);
 
+        validateGetDataArrayResponse(response, urlString, new HashSet<>(Arrays.asList(OBSERVATION_PROPERTIES)));
+    }
+
+    @Test(description = "Test DataArray get with $select.", groups = "level-6", priority = 0)
+    public void testGetDataArraySelect() throws ServiceFailureException {
+        String urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.OBSERVATION, null, null, "?$count=true&$top=3&$resultFormat=dataArray&$select=result,phenomenonTime");
+        Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
+        String response = responseMap.get("response").toString();
+        int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
+        Assert.assertEquals(responseCode, 200, "Error getting Observations using Data Array: Code " + responseCode);
+
+        validateGetDataArrayResponse(response, urlString, new HashSet<>(Arrays.asList("result", "phenomenonTime")));
+    }
+
+    private void validateGetDataArrayResponse(String response, String urlString, Set<String> requestedProperties) {
         JsonNode json;
         try {
             json = new ObjectMapper().readTree(response);
@@ -256,7 +272,6 @@ public class DataArrayTests {
             Assert.fail("Server returned malformed JSON for request: " + urlString, ex);
             return;
         }
-
         if (!json.isObject()) {
             Assert.fail("Server did not return a JSON object for request: " + urlString);
         }
@@ -279,7 +294,6 @@ public class DataArrayTests {
             if (!valueItem.has("Datastream@iot.navigationLink") && !valueItem.has("MultiDatastream@iot.navigationLink")) {
                 Assert.fail("item in value array does not contain (Multi)Datastream@navigationLink for request: " + urlString);
             }
-
             JsonNode components = valueItem.get("components");
             if (components == null || !components.isArray()) {
                 Assert.fail("components field is not an array for request: " + urlString);
@@ -291,12 +305,20 @@ public class DataArrayTests {
                     Assert.fail("components field contains a non-string for request: " + urlString);
                     return;
                 }
-                foundComponents.add(component.textValue());
+                String componentName = component.textValue();
+                foundComponents.add(componentName);
+                if (!requestedProperties.contains(componentName)) {
+                    if (componentName.equals("@iot.id") && requestedProperties.contains("id")) {
+                        // It's ok, id with a different name
+                    } else {
+                        Assert.fail("Found non-requested component '" + componentName + "' for request: " + urlString);
+                    }
+                }
             }
             if (components.size() != foundComponents.size()) {
                 Assert.fail("components field contains duplicates for request: " + urlString);
             }
-            for (String component : OBSERVATION_PROPERTIES) {
+            for (String component : requestedProperties) {
                 if (!foundComponents.contains(component)) {
                     if (component.equals("id") && foundComponents.contains("@iot.id")) {
                         continue;
@@ -304,7 +326,6 @@ public class DataArrayTests {
                     Assert.fail("components field does not contain entry '" + component + "' for request: " + urlString);
                 }
             }
-
             long claimedCount = valueItem.get("dataArray@iot.count").longValue();
             JsonNode dataArray = valueItem.get("dataArray");
             if (!dataArray.isArray()) {
@@ -325,7 +346,6 @@ public class DataArrayTests {
                 }
             }
         }
-
     }
 
     @Test(description = "Test DataArray POST.", groups = "level-6", priority = 1)
