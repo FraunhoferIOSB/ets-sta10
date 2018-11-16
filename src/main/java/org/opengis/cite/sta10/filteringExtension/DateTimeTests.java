@@ -1,6 +1,7 @@
 package org.opengis.cite.sta10.filteringExtension;
 
 import de.fraunhofer.iosb.ilt.sta.ServiceFailureException;
+import de.fraunhofer.iosb.ilt.sta.StatusCodeException;
 import de.fraunhofer.iosb.ilt.sta.dao.BaseDao;
 import de.fraunhofer.iosb.ilt.sta.dao.ObservationDao;
 import de.fraunhofer.iosb.ilt.sta.model.Datastream;
@@ -218,13 +219,14 @@ public class DateTimeTests {
         }
     }
 
-    public void filterForException(BaseDao doa, String filter) {
+    public void filterForException(BaseDao doa, String filter, int expectedCode) {
         try {
             doa.query().filter(filter).list();
-        } catch (IllegalArgumentException e) {
+        } catch (StatusCodeException e) {
+            Assert.assertEquals(e.getStatusCode(), expectedCode, "Filter " + filter + " did not respond with " + expectedCode + " Bad Request, but with " + e.getStatusCode() + ".");
             return;
         } catch (ServiceFailureException ex) {
-            Assert.fail("Failed to call service.", ex);
+            Assert.fail("Failed to call service for filter " + filter, ex);
         }
         Assert.fail("Filter " + filter + " did not respond with 400 Bad Request.");
     }
@@ -392,19 +394,19 @@ public class DateTimeTests {
     @Test(description = "Test the during() function.", groups = "level-3")
     public void testDuring() throws ServiceFailureException {
         ObservationDao doa = service.observations();
-        filterForException(doa, String.format("during(resultTime,%s)", T700));
-        filterForException(doa, String.format("during(validTime,%s)", T700));
-        filterForException(doa, String.format("during(phenomenonTime,%s)", T700));
+        filterForException(doa, String.format("during(resultTime,%s)", T700), 400);
+        filterForException(doa, String.format("during(validTime,%s)", T700), 400);
+        filterForException(doa, String.format("during(phenomenonTime,%s)", T700), 400);
 
         filterAndCheck(doa, String.format("during(resultTime,%s)", I700_800), getFromList(OBSERVATIONS, 2, 3, 4));
         filterAndCheck(doa, String.format("during(validTime,%s)", I700_800), getFromList(OBSERVATIONS, 11, 12, 17, 20));
         filterAndCheck(doa, String.format("during(phenomenonTime,%s)", I700_800), getFromList(OBSERVATIONS, 2, 3, 4, 11, 12, 17, 20));
 
-        filterForException(doa, String.format("during(%s,resultTime)", T700));
+        filterForException(doa, String.format("during(%s,resultTime)", T700), 400);
         filterAndCheck(doa, String.format("during(%s,validTime)", T700), getFromList(OBSERVATIONS, 10, 11, 16, 17, 18, 19));
         filterAndCheck(doa, String.format("during(%s,phenomenonTime)", T700), getFromList(OBSERVATIONS, 10, 11, 16, 17, 18, 19));
 
-        filterForException(doa, String.format("during(%s,resultTime)", I700_800));
+        filterForException(doa, String.format("during(%s,resultTime)", I700_800), 400);
         filterAndCheck(doa, String.format("during(%s,validTime)", I700_800), getFromList(OBSERVATIONS, 11, 16, 18, 19));
         filterAndCheck(doa, String.format("during(%s,phenomenonTime)", I700_800), getFromList(OBSERVATIONS, 11, 16, 18, 19));
     }

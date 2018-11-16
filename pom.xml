@@ -52,6 +52,18 @@
     <spec-version>1.0</spec-version>
   </properties>
 
+  <profiles>
+    <profile>
+      <id>SUREFIRE-1588</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+      </properties>
+    </profile>
+  </profiles>
+
   <repositories>
     <repository>
       <id>Eclipse Paho Repo</id>
@@ -112,7 +124,7 @@
     <dependency>
       <groupId>de.fraunhofer.iosb.ilt</groupId>
       <artifactId>FROST-Client</artifactId>
-      <version>0.19</version>
+      <version>0.20-SNAPSHOT</version>
     </dependency>
   </dependencies>
 

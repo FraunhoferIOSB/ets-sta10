@@ -48,6 +48,40 @@ public class Capability7Test {
     private EntityHelper entityHelper;
     private String rootUri;
 
+    @BeforeClass
+    public void init(ITestContext testContext) {
+        Object obj = testContext.getSuite().getAttribute(
+                SuiteAttribute.LEVEL.getName());
+        if ((null != obj)) {
+            Integer level = Integer.class.cast(obj);
+            Assert.assertTrue(level > 7,
+                    "Conformance level 8 will not be checked since ics = " + level);
+        }
+
+        rootUri = testContext.getSuite().getAttribute(
+                SuiteAttribute.TEST_SUBJECT.getName()).toString();
+        rootUri = rootUri.trim();
+        if (rootUri.lastIndexOf('/') == rootUri.length() - 1) {
+            rootUri = rootUri.substring(0, rootUri.length() - 1);
+        }
+        if (testContext.getSuite().getAttribute(SuiteAttribute.MQTT_SERVER.getName()) == null) {
+            Assert.fail("Property '" + SuiteAttribute.MQTT_SERVER.getName() + "' not set in configuration");
+        }
+        String mqttServerUri = testContext.getSuite().getAttribute(SuiteAttribute.MQTT_SERVER.getName()).toString();
+        if (testContext.getSuite().getAttribute(SuiteAttribute.MQTT_TIMEOUT.getName()) == null) {
+            Assert.fail("Property '" + SuiteAttribute.MQTT_TIMEOUT.getName() + "' not set in configuration");
+        }
+        long mqttTimeout = Long.parseLong(testContext.getSuite().getAttribute(SuiteAttribute.MQTT_TIMEOUT.getName()).toString());
+
+        this.entityHelper = new EntityHelper(rootUri);
+        this.mqttHelper = new MqttHelper(mqttServerUri, mqttTimeout);
+    }
+
+    @AfterClass
+    public void clearDatabase() {
+        entityHelper.deleteEverything();
+    }
+
     @Test(description = "Create observation via MQTT on observation entity set (topic: [version]/Observations", groups = "level-7")
     public void checkCreateObservationDirect() {
         entityHelper.deleteEntityType(EntityType.OBSERVATION);
@@ -158,40 +192,6 @@ public class Capability7Test {
             result += "$expand=" + expands.stream().collect(Collectors.joining(","));
         }
         return result;
-    }
-
-    @AfterClass
-    public void clearDatabase() {
-        entityHelper.deleteEverything();
-    }
-
-    @BeforeClass
-    public void init(ITestContext testContext) {
-        Object obj = testContext.getSuite().getAttribute(
-                SuiteAttribute.LEVEL.getName());
-        if ((null != obj)) {
-            Integer level = Integer.class.cast(obj);
-            Assert.assertTrue(level > 7,
-                    "Conformance level 8 will not be checked since ics = " + level);
-        }
-
-        rootUri = testContext.getSuite().getAttribute(
-                SuiteAttribute.TEST_SUBJECT.getName()).toString();
-        rootUri = rootUri.trim();
-        if (rootUri.lastIndexOf('/') == rootUri.length() - 1) {
-            rootUri = rootUri.substring(0, rootUri.length() - 1);
-        }
-        if (testContext.getSuite().getAttribute(SuiteAttribute.MQTT_SERVER.getName()) == null) {
-            Assert.fail("Property '" + SuiteAttribute.MQTT_SERVER.getName() + "' not set in configuration");
-        }
-        String mqttServerUri = testContext.getSuite().getAttribute(SuiteAttribute.MQTT_SERVER.getName()).toString();
-        if (testContext.getSuite().getAttribute(SuiteAttribute.MQTT_TIMEOUT.getName()) == null) {
-            Assert.fail("Property '" + SuiteAttribute.MQTT_TIMEOUT.getName() + "' not set in configuration");
-        }
-        long mqttTimeout = Long.parseLong(testContext.getSuite().getAttribute(SuiteAttribute.MQTT_TIMEOUT.getName()).toString());
-
-        this.entityHelper = new EntityHelper(rootUri);
-        this.mqttHelper = new MqttHelper(mqttServerUri, mqttTimeout);
     }
 
     private static boolean jsonEquals(JSONObject obj1, JSONObject obj2) {

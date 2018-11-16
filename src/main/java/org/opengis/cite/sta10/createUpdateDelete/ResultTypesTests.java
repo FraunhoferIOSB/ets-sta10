@@ -205,6 +205,7 @@ public class ResultTypesTests {
         doa.create(o2);
         observations.add(o2);
 
+        o2 = o2.withOnlyId();
         o2.setResult(null);
         doa.update(o2);
 

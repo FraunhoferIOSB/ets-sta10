@@ -31,6 +31,7 @@ import org.geojson.Point;
 import org.geojson.Polygon;
 import org.opengis.cite.sta10.SuiteAttribute;
 import org.opengis.cite.sta10.util.EntityUtils;
+import org.opengis.cite.sta10.util.HTTPMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -298,6 +299,26 @@ public class FilterTests {
 
         filterAndCheck(doa, "Datastream/Thing/Datastreams/ObservedProperty/name eq 'ObservedProperty 0'", getFromList(O_PROPS, 0, 1, 2, 3));
         filterAndCheck(doa, "Datastream/Thing/Datastreams/ObservedProperty/name eq 'ObservedProperty 3'", getFromList(O_PROPS, 0, 1, 3));
+    }
+
+    @Test(description = "If the property is single-valued and has the null value, the service SHALL respond with 204 No Content.", groups = "level-3")
+    public void testNullEntityProperty() {
+        String requestUrl = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties";
+        Map<String, Object> result = HTTPMethods.doGet(requestUrl);
+        int responseCode = Integer.parseInt(result.get("response-code").toString());
+        if (responseCode != 204) {
+            Assert.fail("Expected response code 204 on request " + requestUrl);
+        }
+    }
+
+    @Test(description = "If the property is single-valued and has the null value, the service SHALL respond with 204 No Content.", groups = "level-3")
+    public void testNullEntityPropertyValue() {
+        String requestUrl = rootUri + "/Things(" + THINGS.get(0).getId().getUrl() + ")/properties/$value";
+        Map<String, Object> result = HTTPMethods.doGet(requestUrl);
+        int responseCode = Integer.parseInt(result.get("response-code").toString());
+        if (responseCode != 204) {
+            Assert.fail("Expected response code 204 on request " + requestUrl);
+        }
     }
 
     public static <T extends Entity<T>> List<T> getFromList(List<T> list, int... ids) {

@@ -173,6 +173,10 @@ public class Capability1Tests {
         try {
             Map<String, Object> responseMap = getEntity(entityType, id, property.name);
             int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
+            if (responseCode == 204) {
+                // 204 is the proper response for NULL properties.
+                return;
+            }
             Assert.assertEquals(responseCode, 200, "Reading property \"" + property.name + "\" of the existing " + entityType.name() + " with id " + id + " failed.");
             String response = responseMap.get("response").toString();
             JSONObject entity = null;
@@ -202,6 +206,10 @@ public class Capability1Tests {
         int responseCode = Integer.parseInt(responseMap.get("response-code").toString());
         if (responseCode != 200 && property.optional) {
             // The property is optional, and probably not present.
+            return;
+        }
+        if (responseCode == 204) {
+            // 204 is the proper response for NULL properties.
             return;
         }
         Assert.assertEquals(responseCode, 200, "Reading property value of \"" + property + "\" of the exitixting " + entityType.name() + " with id " + id + " failed.");
