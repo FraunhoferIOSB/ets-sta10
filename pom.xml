@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.opengis.cite</groupId>
     <artifactId>ets-common</artifactId>
-    <version>6</version>
+    <version>9</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ets-sta10</artifactId>
@@ -85,6 +85,12 @@
     <dependency>
       <groupId>org.opengis.cite.teamengine</groupId>
       <artifactId>teamengine-spi</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-jdk14</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.opengis.cite</groupId>
@@ -124,7 +130,7 @@
     <dependency>
       <groupId>de.fraunhofer.iosb.ilt</groupId>
       <artifactId>FROST-Client</artifactId>
-      <version>0.20-SNAPSHOT</version>
+      <version>0.23-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
@@ -132,22 +138,10 @@
     <plugins>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.2</version>
+        <version>3.0.1</version>
         <configuration>
-          <docfilessubdirs>true</docfilessubdirs>
-          <show>package</show>
-          <links>
-            <link>http://testng.org/javadocs/</link>
-          </links>
+          <skip>true</skip>
         </configuration>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -160,6 +154,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.1.1</version>
         <configuration>
           <archive>
             <manifest>
@@ -176,6 +171,10 @@
       </plugin>
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
+        <version>3.7.1</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
