@@ -5,19 +5,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
+import static org.opengis.cite.sta10.SuiteFixtureListener.KEY_HAS_ACTUATION;
 import org.opengis.cite.sta10.util.EntityType;
 import org.opengis.cite.sta10.util.HTTPMethods;
 import org.opengis.cite.sta10.util.ServiceURLBuilder;
 import org.testng.Assert;
+import org.testng.ISuite;
 import org.testng.ITestContext;
-import org.testng.annotations.BeforeClass;
 
 /**
  * Creates entities for tests of "A.1 Sensing Core" Conformance class.
  */
 public class TestEntityCreator {
 
-    @BeforeClass
     public static void maybeCreateTestEntities(ITestContext testContext) {
         String rootUri;
         rootUri = testContext.getSuite().getAttribute(
@@ -36,11 +36,13 @@ public class TestEntityCreator {
         int countHistLocations = countEntitiesInResponse(responseHistLocations);
         if (countHistLocations == 0 || countObservations == 0) {
             // No data found, insert test data.
-            createTestEntities(rootUri);
+            ISuite suite = testContext.getSuite();
+            boolean hasActuation = Boolean.TRUE.toString().equals(suite.getXmlSuite().getParameter(KEY_HAS_ACTUATION));
+            createTestEntities(rootUri, hasActuation);
         }
     }
 
-    private static void createTestEntities(String rootUri) {
+    private static void createTestEntities(String rootUri, boolean actuation) {
         String urlParameters = "{\n"
                 + "  \"description\": \"thing 1\",\n"
                 + "  \"name\": \"thing name 1\",\n"
@@ -129,7 +131,46 @@ public class TestEntityCreator {
                 + "}\n"
                 + "";
         String urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.THING, null, null, null);
-        HTTPMethods.doPost(urlString, urlParameters);
+        Map<String, Object> responseMap = HTTPMethods.doPost(urlString, urlParameters);
+        String response = responseMap.get("response").toString();
+        Object id = HTTPMethods.idFromSelfLink(response);
+        if (actuation) {
+            String postContent = "{\n"
+                    + "	\"name\": \"TaskingCapability 1\",\n"
+                    + "	\"description\": \"This is a tasking capability\",\n"
+                    + "	\"properties\": {\n"
+                    + "		\"cool\": true\n"
+                    + "	},\n"
+                    + "	\"taskingParameters\": {\n"
+                    + "		\"todo\": \"yes\"\n"
+                    + "	},\n"
+                    + "	\"Actuator\": {\n"
+                    + "		\"description\": \"actuator 1\",\n"
+                    + "		\"name\": \"actuator name 1\",\n"
+                    + "		\"properties\": {\n"
+                    + "			\"reference\": \"firstActuator \"\n"
+                    + "		},\n"
+                    + "		\"encodingType\": \"application/pdf\",\n"
+                    + "		\"metadata\": \"Window opener\"\n"
+                    + "	},\n"
+                    + "	\"Tasks\": [\n"
+                    + "		{\n"
+                    + "			\"creationTime\": \"2015-03-05T00:00:00Z\",\n"
+                    + "			\"taskingParameters\": {\n"
+                    + "				\"todo\": \"yes\"\n"
+                    + "			}\n"
+                    + "		},\n"
+                    + "		{\n"
+                    + "			\"creationTime\": \"2015-03-05T00:00:00Z\",\n"
+                    + "			\"taskingParameters\": {\n"
+                    + "				\"todo\": \"no\"\n"
+                    + "			}\n"
+                    + "		}\n"
+                    + "	]\n"
+                    + "}";
+            urlString = ServiceURLBuilder.buildURLString(rootUri, EntityType.THING, id, EntityType.TASKING_CAPABILITY, null);
+            HTTPMethods.doPost(urlString, postContent);
+        }
     }
 
     /**

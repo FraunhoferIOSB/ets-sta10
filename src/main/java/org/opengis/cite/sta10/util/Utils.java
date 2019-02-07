@@ -15,15 +15,27 @@
  */
 package org.opengis.cite.sta10.util;
 
+import de.fraunhofer.iosb.ilt.sta.ServiceFailureException;
+import de.fraunhofer.iosb.ilt.sta.dao.BaseDao;
+import de.fraunhofer.iosb.ilt.sta.model.Entity;
+import de.fraunhofer.iosb.ilt.sta.model.ext.EntityList;
+import de.fraunhofer.iosb.ilt.sta.service.SensorThingsService;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jab
  */
 public class Utils {
+
+    /**
+     * The logger for this class.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
     private Utils() {
     }
@@ -75,5 +87,32 @@ public class Utils {
             }
             return part.substring(1, part.length() - 1);
         }
+    }
+
+    public static void deleteAll(SensorThingsService sts) throws ServiceFailureException {
+        deleteAll(sts.things());
+        deleteAll(sts.locations());
+        deleteAll(sts.sensors());
+        deleteAll(sts.featuresOfInterest());
+        deleteAll(sts.observedProperties());
+        deleteAll(sts.observations());
+    }
+
+    public static <T extends Entity<T>> void deleteAll(BaseDao<T> doa) throws ServiceFailureException {
+        boolean more = true;
+        int count = 0;
+        while (more) {
+            EntityList<T> entities = doa.query().count().list();
+            if (entities.getCount() > 0) {
+                LOGGER.info("{} to go.", entities.getCount());
+            } else {
+                more = false;
+            }
+            for (T entity : entities) {
+                doa.delete(entity);
+                count++;
+            }
+        }
+        LOGGER.info("Deleted {} using {}.", count, doa.getClass().getName());
     }
 }

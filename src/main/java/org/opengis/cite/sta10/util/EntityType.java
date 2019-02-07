@@ -8,11 +8,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import static org.opengis.cite.sta10.util.Extension.ACTUATION;
 
 /**
  * List of entity types in SensorThings API.
  */
 public enum EntityType {
+    ACTUATOR("Actuator", "Actuators", ACTUATION),
+    TASK("Task", "Tasks", ACTUATION),
+    TASKING_CAPABILITY("TaskingCapability", "TaskingCapabilities", ACTUATION),
     THING("Thing", "Things"),
     LOCATION("Location", "Locations"),
     SENSOR("Sensor", "Sensors"),
@@ -52,6 +56,11 @@ public enum EntityType {
      * The plural (collection) name of the entity type.
      */
     public final String plural;
+    /**
+     * The extension that defines this EntityType.
+     */
+    public final Extension extension;
+
     private final List<EntityProperty> properties = new ArrayList<>();
     private final Map<String, EntityProperty> propertiesByName = new HashMap<>();
     private final Map<String, EntityProperty> editablePropertiesByName = new HashMap<>();
@@ -61,11 +70,26 @@ public enum EntityType {
     private static final Set<String> NAMES_PLURAL = new HashSet<>();
 
     static {
-        // TODO: Add properties, fix test that break
+        ACTUATOR.addProperty("name", false, true);
+        ACTUATOR.addProperty("description", false, true);
+        ACTUATOR.addProperty("encodingType", false, true);
+        ACTUATOR.addProperty("metadata", false, true);
+        ACTUATOR.addRelations(TASKING_CAPABILITY.plural);
+
+        TASK.addProperty("creationTime", false, true);
+        TASK.addProperty("taskingParameters", false, false, "object");
+        TASK.addRelations(TASKING_CAPABILITY.singular);
+
+        TASKING_CAPABILITY.addProperty("name", false, true);
+        TASKING_CAPABILITY.addProperty("description", false, true);
+        TASKING_CAPABILITY.addProperty("properties", true, false, "object");
+        TASKING_CAPABILITY.addProperty("taskingParameters", false, false, "object");
+        TASKING_CAPABILITY.addRelations(THING.singular, ACTUATOR.singular, TASK.plural);
+
         THING.addProperty("name", false, true);
         THING.addProperty("description", false, true);
         THING.addProperty("properties", true, false, "object");
-        THING.addRelations(DATASTREAM.plural, HISTORICAL_LOCATION.plural, LOCATION.plural);
+        THING.addRelations(DATASTREAM.plural, HISTORICAL_LOCATION.plural, LOCATION.plural, TASKING_CAPABILITY.plural);
 
         LOCATION.addProperty("name", false, true);
         LOCATION.addProperty("description", false, true);
@@ -130,8 +154,19 @@ public enum EntityType {
     }
 
     private EntityType(String singular, String plural) {
+        this.extension = Extension.CORE;
         this.singular = singular;
         this.plural = plural;
+    }
+
+    private EntityType(String singular, String plural, Extension extension) {
+        this.extension = extension;
+        this.singular = singular;
+        this.plural = plural;
+    }
+
+    public Extension getExtension() {
+        return extension;
     }
 
     public String getRootEntitySet() {

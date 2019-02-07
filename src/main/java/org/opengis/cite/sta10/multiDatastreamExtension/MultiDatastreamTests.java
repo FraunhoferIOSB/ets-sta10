@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.geojson.Point;
 import org.opengis.cite.sta10.SuiteAttribute;
+import static org.opengis.cite.sta10.SuiteFixtureListener.KEY_HAS_MULTI_DATASTREAM;
 import org.opengis.cite.sta10.util.EntityUtils;
 import org.opengis.cite.sta10.util.HTTPMethods;
 import org.slf4j.Logger;
@@ -73,7 +74,7 @@ public class MultiDatastreamTests {
                     "Conformance level 5 will not be checked since ics = " + level);
         }
 
-        boolean hasMultiDatastream = suite.getXmlSuite().getParameter("hasMultiDatastream") != null;
+        boolean hasMultiDatastream = Boolean.TRUE.toString().equals(suite.getXmlSuite().getParameter(KEY_HAS_MULTI_DATASTREAM));
         Assert.assertTrue(hasMultiDatastream, "Conformance level 5 not checked since MultiDatastreams not listed in Service Root.");
 
         rootUri = suite.getAttribute(SuiteAttribute.TEST_SUBJECT.getName()).toString();
@@ -205,7 +206,7 @@ public class MultiDatastreamTests {
         md1.setThing(THINGS.get(0).withOnlyId());
         md1.setSensor(SENSORS.get(0).withOnlyId());
 
-        EntityList<ObservedProperty> observedProperties = new EntityList<>(de.fraunhofer.iosb.ilt.sta.model.EntityType.OBSERVED_PROPERTIES);
+        List<ObservedProperty> observedProperties = new ArrayList<>();
         observedProperties.add(OBSERVED_PROPS.get(0).withOnlyId());
         md1.setObservedProperties(observedProperties);
 
@@ -227,7 +228,7 @@ public class MultiDatastreamTests {
         md2.setThing(THINGS.get(0).withOnlyId());
         md2.setSensor(SENSORS.get(0).withOnlyId());
 
-        EntityList<ObservedProperty> observedProperties2 = new EntityList<>(de.fraunhofer.iosb.ilt.sta.model.EntityType.OBSERVED_PROPERTIES);
+        List<ObservedProperty> observedProperties2 = new ArrayList<>();
         observedProperties2.add(OBSERVED_PROPS.get(0).withOnlyId());
         observedProperties2.add(OBSERVED_PROPS.get(1).withOnlyId());
         md2.setObservedProperties(observedProperties2);
@@ -250,7 +251,7 @@ public class MultiDatastreamTests {
         md3.setThing(THINGS.get(0).withOnlyId());
         md3.setSensor(SENSORS.get(0).withOnlyId());
 
-        EntityList<ObservedProperty> observedProperties3 = new EntityList<>(de.fraunhofer.iosb.ilt.sta.model.EntityType.OBSERVED_PROPERTIES);
+        List<ObservedProperty> observedProperties3 = new ArrayList<>();
         observedProperties3.add(OBSERVED_PROPS.get(1).withOnlyId());
         observedProperties3.add(OBSERVED_PROPS.get(0).withOnlyId());
         md3.setObservedProperties(observedProperties3);
@@ -273,7 +274,7 @@ public class MultiDatastreamTests {
         md4.setThing(THINGS.get(0).withOnlyId());
         md4.setSensor(SENSORS.get(1).withOnlyId());
 
-        EntityList<ObservedProperty> observedProperties4 = new EntityList<>(de.fraunhofer.iosb.ilt.sta.model.EntityType.OBSERVED_PROPERTIES);
+        List<ObservedProperty> observedProperties4 = new ArrayList<>();
         observedProperties4.add(OBSERVED_PROPS.get(0).withOnlyId());
         observedProperties4.add(OBSERVED_PROPS.get(0).withOnlyId());
         md4.setObservedProperties(observedProperties4);

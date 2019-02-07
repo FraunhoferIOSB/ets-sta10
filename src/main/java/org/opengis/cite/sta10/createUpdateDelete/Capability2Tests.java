@@ -1,22 +1,27 @@
 package org.opengis.cite.sta10.createUpdateDelete;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
+import org.opengis.cite.sta10.SuiteFixtureListener;
 import org.opengis.cite.sta10.util.ControlInformation;
 import org.opengis.cite.sta10.util.EntityType;
+import org.opengis.cite.sta10.util.Extension;
 import org.opengis.cite.sta10.util.HTTPMethods;
 import org.opengis.cite.sta10.util.ServiceURLBuilder;
 import org.opengis.cite.sta10.util.Utils;
 import static org.opengis.cite.sta10.util.Utils.quoteIdForJson;
 import static org.opengis.cite.sta10.util.Utils.quoteIdForUrl;
 import org.testng.Assert;
+import org.testng.ISuite;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -31,6 +36,10 @@ public class Capability2Tests {
      * The root URL of the SensorThings service under the test
      */
     public String rootUri;//="http://localhost:8080/OGCSensorThings/v1.0";
+    private boolean hasMultiDatastream = false;
+    private boolean hasActuation = false;
+    private final Set<Extension> extensions = EnumSet.noneOf(Extension.class);
+    private final Set<EntityType> enabledEntityTypes = EnumSet.noneOf(EntityType.class);
 
     /**
      * The list of ids for all the Things created during test procedure (will be
@@ -82,20 +91,37 @@ public class Capability2Tests {
      */
     @BeforeClass
     public void obtainTestSubject(ITestContext testContext) {
-        Object obj = testContext.getSuite().getAttribute(
-                SuiteAttribute.LEVEL.getName());
+        ISuite suite = testContext.getSuite();
+        Object obj = suite.getAttribute(SuiteAttribute.LEVEL.getName());
         if ((null != obj)) {
             Integer level = Integer.class.cast(obj);
             Assert.assertTrue(level.intValue() > 1,
                     "Conformance level 2 will not be checked since ics = " + level);
         }
 
-        rootUri = testContext.getSuite().getAttribute(
-                SuiteAttribute.TEST_SUBJECT.getName()).toString();
+        rootUri = suite.getAttribute(SuiteAttribute.TEST_SUBJECT.getName()).toString();
         rootUri = rootUri.trim();
         if (rootUri.lastIndexOf('/') == rootUri.length() - 1) {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
+
+        hasMultiDatastream = suite.getXmlSuite().getParameter(SuiteFixtureListener.KEY_HAS_MULTI_DATASTREAM) != null;
+        hasActuation = suite.getXmlSuite().getParameter(SuiteFixtureListener.KEY_HAS_ACTUATION) != null;
+        extensions.add(Extension.CORE);
+        if (hasMultiDatastream) {
+            extensions.add(Extension.MULTI_DATASTREAM);
+        }
+        if (hasActuation) {
+            extensions.add(Extension.ACTUATION);
+        }
+
+        for (EntityType entityType : EntityType.values()) {
+            if (!extensions.contains(entityType.getExtension())) {
+                continue;
+            }
+            enabledEntityTypes.add(entityType);
+        }
+
         deleteEverythings();
     }
 
@@ -1341,14 +1367,9 @@ public class Capability2Tests {
      */
     @Test(description = "DELETE nonexistent Entities", groups = "level-2", priority = 5)
     public void deleteNoneexistentEntities() {
-        deleteNonExsistentEntity(EntityType.THING);
-        deleteNonExsistentEntity(EntityType.LOCATION);
-        deleteNonExsistentEntity(EntityType.HISTORICAL_LOCATION);
-        deleteNonExsistentEntity(EntityType.SENSOR);
-        deleteNonExsistentEntity(EntityType.OBSERVED_PROPERTY);
-        deleteNonExsistentEntity(EntityType.DATASTREAM);
-        deleteNonExsistentEntity(EntityType.OBSERVATION);
-        deleteNonExsistentEntity(EntityType.FEATURE_OF_INTEREST);
+        for (EntityType type : enabledEntityTypes) {
+            deleteNonExsistentEntity(type);
+        }
     }
 
     /**
@@ -1717,6 +1738,11 @@ public class Capability2Tests {
         deleteEntityType(EntityType.HISTORICAL_LOCATION);
         deleteEntityType(EntityType.LOCATION);
         deleteEntityType(EntityType.THING);
+        if (hasActuation) {
+            deleteEntityType(EntityType.ACTUATOR);
+            deleteEntityType(EntityType.TASK);
+            deleteEntityType(EntityType.TASKING_CAPABILITY);
+        }
     }
 
     /**

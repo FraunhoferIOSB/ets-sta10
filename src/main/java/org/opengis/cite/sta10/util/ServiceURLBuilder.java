@@ -20,150 +20,20 @@ public class ServiceURLBuilder {
      */
     public static String buildURLString(String rootURI, EntityType parentEntityType, Object parentId, EntityType relationEntityType, String property) {
         String urlString = rootURI;
-        if (relationEntityType == null) {
-            switch (parentEntityType) {
-                case THING:
-                    urlString += "/Things";
-                    break;
-                case LOCATION:
-                    urlString += "/Locations";
-                    break;
-                case HISTORICAL_LOCATION:
-                    urlString += "/HistoricalLocations";
-                    break;
-                case DATASTREAM:
-                    urlString += "/Datastreams";
-                    break;
-                case SENSOR:
-                    urlString += "/Sensors";
-                    break;
-                case OBSERVATION:
-                    urlString += "/Observations";
-                    break;
-                case OBSERVED_PROPERTY:
-                    urlString += "/ObservedProperties";
-                    break;
-                case FEATURE_OF_INTEREST:
-                    urlString += "/FeaturesOfInterest";
-                    break;
-                default:
-                    Assert.fail("Entity type is not recognized in SensorThings API : " + parentEntityType);
-                    return null;
-            }
-            if (parentId != null) {
-                urlString += "(" + Utils.quoteIdForUrl(parentId) + ")";
-            }
-        } else {
-            switch (parentEntityType) {
-                case THING:
-                    urlString += "/Things(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case LOCATION:
-                            urlString += "/Locations";
-                            break;
-                        case HISTORICAL_LOCATION:
-                            urlString += "/HistoricalLocations";
-                            break;
-                        case DATASTREAM:
-                            urlString += "/Datastreams";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case LOCATION:
-                    urlString += "/Locations(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case THING:
-                            urlString += "/Things";
-                            break;
-                        case HISTORICAL_LOCATION:
-                            urlString += "/HistoricalLocations";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case HISTORICAL_LOCATION:
-                    urlString += "/HistoricalLocations(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case THING:
-                            urlString += "/Thing";
-                            break;
-                        case LOCATION:
-                            urlString += "/Locations";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case DATASTREAM:
-                    urlString += "/Datastreams(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case THING:
-                            urlString += "/Thing";
-                            break;
-                        case SENSOR:
-                            urlString += "/Sensor";
-                            break;
-                        case OBSERVATION:
-                            urlString += "/Observations";
-                            break;
-                        case OBSERVED_PROPERTY:
-                            urlString += "/ObservedProperty";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case SENSOR:
-                    urlString += "/Sensors(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case DATASTREAM:
-                            urlString += "/Datastreams";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case OBSERVATION:
-                    urlString += "/Observations(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case THING:
-                        case DATASTREAM:
-                            urlString += "/Datastream";
-                            break;
-                        case FEATURE_OF_INTEREST:
-                            urlString += "/FeatureOfInterest";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case OBSERVED_PROPERTY:
-                    urlString += "/ObservedProperties(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case DATASTREAM:
-                            urlString += "/Datastreams";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                case FEATURE_OF_INTEREST:
-                    urlString += "/FeaturesOfInterest(" + Utils.quoteIdForUrl(parentId) + ")";
-                    switch (relationEntityType) {
-                        case OBSERVATION:
-                            urlString += "/Observations";
-                            break;
-                        default:
-                            Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
-                    }
-                    break;
-                default:
-                    Assert.fail("Entity type is not recognized in SensorThings API : " + parentEntityType);
+        urlString += "/" + parentEntityType.plural;
+        if (parentId != null) {
+            urlString += "(" + Utils.quoteIdForUrl(parentId) + ")";
+        }
+        if (relationEntityType != null) {
+            if (parentEntityType.getRelations().contains(relationEntityType.singular)) {
+                urlString += "/" + relationEntityType.singular;
+            } else if (parentEntityType.getRelations().contains(relationEntityType.plural)) {
+                urlString += "/" + relationEntityType.plural;
+            } else {
+                Assert.fail("Entity type relation is not recognized in SensorThings API : " + parentEntityType + " and " + relationEntityType);
             }
         }
+
         if (property != null) {
             if (property.indexOf('?') >= 0) {
                 urlString += property;

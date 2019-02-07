@@ -1,17 +1,23 @@
 package org.opengis.cite.sta10.sensingCore;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.SuiteAttribute;
+import org.opengis.cite.sta10.SuiteFixtureListener;
 import org.opengis.cite.sta10.util.ControlInformation;
 import org.opengis.cite.sta10.util.EntityType;
+import org.opengis.cite.sta10.util.Extension;
 import org.opengis.cite.sta10.util.HTTPMethods;
 import org.opengis.cite.sta10.util.ServiceURLBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.ISuite;
 import org.testng.ITestContext;
@@ -24,6 +30,10 @@ import org.testng.annotations.Test;
 public class Capability1Tests {
 
     /**
+     * The logger for this class.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(Capability1Tests.class);
+    /**
      * The root URL of the SensorThings service under the test
      */
     public String rootUri;//="http://localhost:8080/OGCSensorThings/v1.0";
@@ -33,6 +43,9 @@ public class Capability1Tests {
      */
     private final int resourcePathLevel = 4;
     private boolean hasMultiDatastream = false;
+    private boolean hasActuation = false;
+    private final Set<Extension> extensions = EnumSet.noneOf(Extension.class);
+    private final Set<EntityType> enabledEntityTypes = EnumSet.noneOf(EntityType.class);
 
     /**
      * This method will be run before starting the test for this conformance
@@ -56,7 +69,23 @@ public class Capability1Tests {
         if (rootUri.lastIndexOf('/') == rootUri.length() - 1) {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
-        hasMultiDatastream = suite.getXmlSuite().getParameter("hasMultiDatastream") != null;
+        hasMultiDatastream = suite.getXmlSuite().getParameter(SuiteFixtureListener.KEY_HAS_MULTI_DATASTREAM) != null;
+        hasActuation = suite.getXmlSuite().getParameter(SuiteFixtureListener.KEY_HAS_ACTUATION) != null;
+        extensions.add(Extension.CORE);
+        if (hasMultiDatastream) {
+            extensions.add(Extension.MULTI_DATASTREAM);
+        }
+        if (hasActuation) {
+            extensions.add(Extension.ACTUATION);
+        }
+
+        for (EntityType entityType : EntityType.values()) {
+            if (!extensions.contains(entityType.getExtension())) {
+                continue;
+            }
+            enabledEntityTypes.add(entityType);
+        }
+
         TestEntityCreator.maybeCreateTestEntities(testContext);
     }
 
@@ -67,22 +96,10 @@ public class Capability1Tests {
      */
     @Test(description = "GET Entities", groups = "level-1")
     public void readEntitiesAndCheckResponse() {
-        String response = getEntities(EntityType.THING);
-        checkEntitiesAllAspectsForResponse(EntityType.THING, response);
-        response = getEntities(EntityType.LOCATION);
-        checkEntitiesAllAspectsForResponse(EntityType.LOCATION, response);
-        response = getEntities(EntityType.HISTORICAL_LOCATION);
-        checkEntitiesAllAspectsForResponse(EntityType.HISTORICAL_LOCATION, response);
-        response = getEntities(EntityType.DATASTREAM);
-        checkEntitiesAllAspectsForResponse(EntityType.DATASTREAM, response);
-        response = getEntities(EntityType.SENSOR);
-        checkEntitiesAllAspectsForResponse(EntityType.SENSOR, response);
-        response = getEntities(EntityType.OBSERVATION);
-        checkEntitiesAllAspectsForResponse(EntityType.OBSERVATION, response);
-        response = getEntities(EntityType.OBSERVED_PROPERTY);
-        checkEntitiesAllAspectsForResponse(EntityType.OBSERVED_PROPERTY, response);
-        response = getEntities(EntityType.FEATURE_OF_INTEREST);
-        checkEntitiesAllAspectsForResponse(EntityType.FEATURE_OF_INTEREST, response);
+        for (EntityType entityType : enabledEntityTypes) {
+            String response = getEntities(entityType);
+            checkEntitiesAllAspectsForResponse(entityType, response);
+        }
     }
 
     /**
@@ -91,14 +108,9 @@ public class Capability1Tests {
      */
     @Test(description = "GET nonexistent Entity", groups = "level-1")
     public void readNonexistentEntity() {
-        readNonexistentEntityWithEntityType(EntityType.THING);
-        readNonexistentEntityWithEntityType(EntityType.LOCATION);
-        readNonexistentEntityWithEntityType(EntityType.HISTORICAL_LOCATION);
-        readNonexistentEntityWithEntityType(EntityType.DATASTREAM);
-        readNonexistentEntityWithEntityType(EntityType.SENSOR);
-        readNonexistentEntityWithEntityType(EntityType.OBSERVATION);
-        readNonexistentEntityWithEntityType(EntityType.OBSERVED_PROPERTY);
-        readNonexistentEntityWithEntityType(EntityType.FEATURE_OF_INTEREST);
+        for (EntityType entityType : enabledEntityTypes) {
+            readNonexistentEntityWithEntityType(entityType);
+        }
     }
 
     /**
@@ -108,22 +120,10 @@ public class Capability1Tests {
      */
     @Test(description = "GET Specific Entity", groups = "level-1")
     public void readEntityAndCheckResponse() {
-        String response = readEntityWithEntityType(EntityType.THING);
-        checkEntityAllAspectsForResponse(EntityType.THING, response);
-        response = readEntityWithEntityType(EntityType.LOCATION);
-        checkEntityAllAspectsForResponse(EntityType.LOCATION, response);
-        response = readEntityWithEntityType(EntityType.HISTORICAL_LOCATION);
-        checkEntityAllAspectsForResponse(EntityType.HISTORICAL_LOCATION, response);
-        response = readEntityWithEntityType(EntityType.DATASTREAM);
-        checkEntityAllAspectsForResponse(EntityType.DATASTREAM, response);
-        response = readEntityWithEntityType(EntityType.SENSOR);
-        checkEntityAllAspectsForResponse(EntityType.SENSOR, response);
-        response = readEntityWithEntityType(EntityType.OBSERVATION);
-        checkEntityAllAspectsForResponse(EntityType.OBSERVATION, response);
-        response = readEntityWithEntityType(EntityType.OBSERVED_PROPERTY);
-        checkEntityAllAspectsForResponse(EntityType.OBSERVED_PROPERTY, response);
-        response = readEntityWithEntityType(EntityType.FEATURE_OF_INTEREST);
-        checkEntityAllAspectsForResponse(EntityType.FEATURE_OF_INTEREST, response);
+        for (EntityType entityType : enabledEntityTypes) {
+            String response = readEntityWithEntityType(entityType);
+            checkEntityAllAspectsForResponse(entityType, response);
+        }
     }
 
     /**
@@ -131,14 +131,9 @@ public class Capability1Tests {
      */
     @Test(description = "GET Property of an Entity", groups = "level-1")
     public void readPropertyOfEntityAndCheckResponse() {
-        readPropertyOfEntityWithEntityType(EntityType.THING);
-        readPropertyOfEntityWithEntityType(EntityType.LOCATION);
-        readPropertyOfEntityWithEntityType(EntityType.HISTORICAL_LOCATION);
-        readPropertyOfEntityWithEntityType(EntityType.DATASTREAM);
-        readPropertyOfEntityWithEntityType(EntityType.OBSERVED_PROPERTY);
-        readPropertyOfEntityWithEntityType(EntityType.SENSOR);
-        readPropertyOfEntityWithEntityType(EntityType.OBSERVATION);
-        readPropertyOfEntityWithEntityType(EntityType.FEATURE_OF_INTEREST);
+        for (EntityType entityType : enabledEntityTypes) {
+            readPropertyOfEntityWithEntityType(entityType);
+        }
     }
 
     /**
@@ -227,14 +222,9 @@ public class Capability1Tests {
      */
     @Test(description = "Check Resource Path", groups = "level-1")
     public void checkResourcePaths() {
-        readRelatedEntityOfEntityWithEntityType(EntityType.THING);
-        readRelatedEntityOfEntityWithEntityType(EntityType.LOCATION);
-        readRelatedEntityOfEntityWithEntityType(EntityType.HISTORICAL_LOCATION);
-        readRelatedEntityOfEntityWithEntityType(EntityType.DATASTREAM);
-        readRelatedEntityOfEntityWithEntityType(EntityType.OBSERVED_PROPERTY);
-        readRelatedEntityOfEntityWithEntityType(EntityType.SENSOR);
-        readRelatedEntityOfEntityWithEntityType(EntityType.OBSERVATION);
-        readRelatedEntityOfEntityWithEntityType(EntityType.FEATURE_OF_INTEREST);
+        for (EntityType entityType : enabledEntityTypes) {
+            readRelatedEntityOfEntityWithEntityType(entityType);
+        }
     }
 
     /**
@@ -263,11 +253,12 @@ public class Capability1Tests {
         if (entityTypes.size() > resourcePathLevel) {
             return;
         }
+        String urlString = null;
         try {
             String headName = entityTypes.get(entityTypes.size() - 1);
             EntityType headEntity = EntityType.getForRelation(headName);
             boolean isPlural = EntityType.isPlural(headName);
-            String urlString = ServiceURLBuilder.buildURLString(rootUri, entityTypes, ids, null);
+            urlString = ServiceURLBuilder.buildURLString(rootUri, entityTypes, ids, null);
             Map<String, Object> responseMap = HTTPMethods.doGet(urlString);
             Assert.assertEquals(responseMap.get("response-code"), 200, "Reading relation of the entity failed: " + entityTypes.toString());
             String response = responseMap.get("response").toString();
@@ -300,7 +291,7 @@ public class Capability1Tests {
             }
             ids.remove(ids.size() - 1);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to parse response for " + urlString, e);
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
 
@@ -403,6 +394,11 @@ public class Capability1Tests {
             if (hasMultiDatastream) {
                 addedLinks.put("MultiDatastreams", false);
             }
+            if (hasActuation) {
+                addedLinks.put("Actuators", false);
+                addedLinks.put("TaskingCapabilities", false);
+                addedLinks.put("Tasks", false);
+            }
             for (int i = 0; i < entities.length(); i++) {
                 JSONObject entity = entities.getJSONObject(i);
                 try {
@@ -413,46 +409,17 @@ public class Capability1Tests {
                 }
                 String name = entity.getString("name");
                 String nameUrl = entity.getString("url");
-                switch (name) {
-                    case "Things":
-                        Assert.assertEquals(nameUrl, rootUri + "/Things", "The URL for Things in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "Locations":
-                        Assert.assertEquals(nameUrl, rootUri + "/Locations", "The URL for Locations in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "HistoricalLocations":
-                        Assert.assertEquals(nameUrl, rootUri + "/HistoricalLocations", "The URL for HistoricalLocations in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "Datastreams":
-                        Assert.assertEquals(nameUrl, rootUri + "/Datastreams", "The URL for Datastreams in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "MultiDatastreams":
-                        Assert.assertEquals(nameUrl, rootUri + "/MultiDatastreams", "The URL for MultiDatastreams in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "Sensors":
-                        Assert.assertEquals(nameUrl, rootUri + "/Sensors", "The URL for Sensors in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "Observations":
-                        Assert.assertEquals(nameUrl, rootUri + "/Observations", "The URL for Observations in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "ObservedProperties":
-                        Assert.assertEquals(nameUrl, rootUri + "/ObservedProperties", "The URL for ObservedProperties in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    case "FeaturesOfInterest":
-                        Assert.assertEquals(nameUrl, rootUri + "/FeaturesOfInterest", "The URL for FeaturesOfInterest in Service Root URI is not compliant to SensorThings API.");
-                        addedLinks.put(name, true);
-                        break;
-                    default:
+                addedLinks.put(name, true);
+                if ("MultiDatastreams".equals(name)) {
+                    // TODO: MultiDatastreams are not in the entity list yet.
+                    Assert.assertEquals(nameUrl, rootUri + "/MultiDatastreams", "The URL for MultiDatastreams in Service Root URI is not compliant to SensorThings API.");
+                } else {
+                    try {
+                        EntityType entityType = EntityType.getForRelation(name);
+                        Assert.assertEquals(nameUrl, rootUri + "/" + entityType.plural, "The URL for " + entityType.plural + " in Service Root URI is not compliant to SensorThings API.");
+                    } catch (IllegalArgumentException exc) {
                         Assert.fail("There is a component in Service Root URI response that is not in SensorThings API : " + name);
-                        break;
+                    }
                 }
             }
             for (String key : addedLinks.keySet()) {

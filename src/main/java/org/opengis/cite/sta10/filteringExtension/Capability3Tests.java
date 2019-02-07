@@ -622,7 +622,7 @@ public class Capability3Tests {
             }
         } catch (JSONException e) {
             e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
+            Assert.fail("An Exception occurred during testing " + entityType + ":\n" + e.getMessage());
         }
 
     }
@@ -1316,7 +1316,7 @@ public class Capability3Tests {
             }
         } catch (JSONException e) {
             e.printStackTrace();
-            Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
+            Assert.fail("An Exception occurred during testing " + properties + ":\n" + e.getMessage());
         }
     }
 

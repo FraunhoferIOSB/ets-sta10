@@ -29,6 +29,9 @@ import org.testng.ISuiteListener;
  */
 public class SuiteFixtureListener implements ISuiteListener {
 
+    public static final String KEY_HAS_MULTI_DATASTREAM = "hasMultiDatastream";
+    public static final String KEY_HAS_ACTUATION = "hasActuation";
+
     @Override
     public void onStart(ISuite suite) {
         processSuiteParameters(suite);
@@ -194,18 +197,21 @@ public class SuiteFixtureListener implements ISuiteListener {
                         return "The URL for Actuators in Service Root URI is not compliant to SensorThings API.";
                     }
                     addedLinks.put(name, true);
+                    params.put(KEY_HAS_ACTUATION, Boolean.TRUE.toString());
                     break;
                 case "Tasks":
                     if (!nameUrl.equals(rootUri + "/Tasks")) {
                         return "The URL for Tasks in Service Root URI is not compliant to SensorThings API.";
                     }
                     addedLinks.put(name, true);
+                    params.put(KEY_HAS_ACTUATION, Boolean.TRUE.toString());
                     break;
                 case "TaskingCapabilities":
                     if (!nameUrl.equals(rootUri + "/TaskingCapabilities")) {
                         return "The URL for TaskingCapabilities in Service Root URI is not compliant to SensorThings API.";
                     }
                     addedLinks.put(name, true);
+                    params.put(KEY_HAS_ACTUATION, Boolean.TRUE.toString());
                     break;
                 case "Things":
                     if (!nameUrl.equals(rootUri + "/Things")) {
@@ -236,7 +242,7 @@ public class SuiteFixtureListener implements ISuiteListener {
                         return "The URL for Datastreams in Service Root URI is not compliant to SensorThings API.";
                     }
                     addedLinks.put(name, true);
-                    params.put("hasMultiDatastream", "true");
+                    params.put(KEY_HAS_MULTI_DATASTREAM, Boolean.TRUE.toString());
                     break;
                 case "Sensors":
                     if (!nameUrl.equals(rootUri + "/Sensors")) {

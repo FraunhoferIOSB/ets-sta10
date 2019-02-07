@@ -18,6 +18,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.Assert;
 
 /**
  * Sending HTTP Methods: GET, POST, PUT, PATCH, and DELETE
@@ -235,5 +236,24 @@ public class HTTPMethods {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Parse a selfLink or Location response header and return the id.
+     *
+     * @param selfLink The selfLink to parse.
+     * @return The id found in the selfLink.
+     */
+    public static Object idFromSelfLink(String selfLink) {
+        String idString = selfLink.substring(selfLink.indexOf("(") + 1, selfLink.indexOf(")"));
+        if (idString.startsWith("'") && idString.endsWith("'")) {
+            return idString;
+        }
+        try {
+            return Long.parseLong(idString);
+        } catch (NumberFormatException ex) {
+            Assert.fail("Failed to parse returned ID (" + idString + "). String IDs must start and end with a single quote (').");
+        }
+        return idString;
     }
 }
