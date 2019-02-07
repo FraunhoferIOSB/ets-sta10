@@ -8,6 +8,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.Consts;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
@@ -25,6 +26,7 @@ import org.testng.Assert;
  */
 public class HTTPMethods {
 
+    public static final ContentType APPLICATION_JSON_PATCH = ContentType.create("application/json-patch+json", Consts.UTF_8);
     /**
      * The logger for this class.
      */
@@ -234,6 +236,35 @@ public class HTTPMethods {
             return result;
         } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Send HTTP PATCH request to the urlString with patchBody and return response code and response body
+     *
+     * @param urlString The URL that the PATCH request should be sent to
+     * @param patchBody The body of the PATCH request
+     * @return response-code and response(response body) of the HTTP PATCH in the MAP format.
+     * If the response is not 200, the response(response body) will be empty.
+     */
+    public static Map<String, Object> doJsonPatch(String urlString, String patchBody) {
+        URI uri;
+        LOGGER.info("Patching: {}", urlString);
+        Map<String, Object> result;
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            uri = new URI(urlString);
+            HttpPatch request = new HttpPatch(uri);
+            StringEntity params = new StringEntity(patchBody, APPLICATION_JSON_PATCH);
+            request.setEntity(params);
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                result = new HashMap<>();
+                result.put("response-code", response.getStatusLine().getStatusCode());
+                result.put("response", EntityUtils.toString(response.getEntity()));
+                return result;
+            }
+        } catch (URISyntaxException | IOException e) {
+            LOGGER.error("Failed to send JSON Patch.", e);
         }
         return null;
     }
