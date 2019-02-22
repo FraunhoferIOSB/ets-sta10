@@ -278,7 +278,7 @@ public class HTTPMethods {
     public static Object idFromSelfLink(String selfLink) {
         String idString = selfLink.substring(selfLink.indexOf("(") + 1, selfLink.indexOf(")"));
         if (idString.startsWith("'") && idString.endsWith("'")) {
-            return idString;
+            return idString.substring(1, idString.length() - 1);
         }
         try {
             return Long.parseLong(idString);
