@@ -380,7 +380,7 @@ public class Capability1Tests {
     public void checkServiceRootUri() {
         try {
             String response = getEntities(null);
-            JSONObject jsonResponse = new JSONObject(response.toString());
+            JSONObject jsonResponse = new JSONObject(response);
             JSONArray entities = jsonResponse.getJSONArray("value");
             Map<String, Boolean> addedLinks = new HashMap<>();
             addedLinks.put("Things", false);
@@ -401,11 +401,8 @@ public class Capability1Tests {
             }
             for (int i = 0; i < entities.length(); i++) {
                 JSONObject entity = entities.getJSONObject(i);
-                try {
-                    Assert.assertNotNull(entity.get("name"));
-                    Assert.assertNotNull(entity.get("url"));
-                } catch (JSONException e) {
-                    Assert.fail("Service root URI does not have proper JSON keys: name and value.");
+                if (!entity.has("name") || !entity.has("url")) {
+                    Assert.fail("Service root URI component does not have proper JSON keys: name and value.");
                 }
                 String name = entity.getString("name");
                 String nameUrl = entity.getString("url");
@@ -427,7 +424,7 @@ public class Capability1Tests {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("An Exception occurred during testing!", e);
             Assert.fail("An Exception occurred during testing!:\n" + e.getMessage());
         }
     }

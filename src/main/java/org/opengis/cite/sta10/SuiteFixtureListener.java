@@ -11,6 +11,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opengis.cite.sta10.util.ClientUtils;
 import org.opengis.cite.sta10.util.TestSuiteLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 
@@ -28,6 +30,11 @@ import org.testng.ISuiteListener;
  * @see org.testng.ISuite ISuite interface
  */
 public class SuiteFixtureListener implements ISuiteListener {
+
+    /**
+     * The logger for this class.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(SuiteFixtureListener.class);
 
     public static final String KEY_HAS_MULTI_DATASTREAM = "hasMultiDatastream";
     public static final String KEY_HAS_ACTUATION = "hasActuation";
@@ -117,7 +124,7 @@ public class SuiteFixtureListener implements ISuiteListener {
      */
     private String checkServiceRootUri(String rootUri, Map<String, String> params) {
         rootUri = rootUri.trim();
-        if (rootUri.lastIndexOf('/') == rootUri.length() - 1) {
+        if (rootUri.endsWith("/")) {
             rootUri = rootUri.substring(0, rootUri.length() - 1);
         }
         HttpURLConnection connection = null;
@@ -146,14 +153,8 @@ public class SuiteFixtureListener implements ISuiteListener {
             }
             response = responseBuilder.toString();
             rd.close();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return "Cannot connect to " + rootUri + ".";
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-            return "Cannot connect to " + rootUri + ".";
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Cannot connect to " + rootUri + ".", e);
             return "Cannot connect to " + rootUri + ".";
         }
         JSONObject jsonResponse = null;
@@ -162,7 +163,7 @@ public class SuiteFixtureListener implements ISuiteListener {
             jsonResponse = new JSONObject(response);
             entities = jsonResponse.getJSONArray("value");
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.error("The service response for the root URI \"" + rootUri + "\" is not JSON.", e);
             return "The service response for the root URI \"" + rootUri + "\" is not JSON.";
         }
         Map<String, Boolean> addedLinks = new HashMap<>();
@@ -179,16 +180,16 @@ public class SuiteFixtureListener implements ISuiteListener {
             String name, nameUrl;
             try {
                 entity = entities.getJSONObject(i);
-                if (entity.get("name") == null) {
+                if (!entity.has("name")) {
                     return "The name component of Service root URI response is not available.";
                 }
-                if (entity.get("url") == null) {
+                if (!entity.has("url")) {
                     return "The name component of Service root URI response is not available.";
                 }
                 name = entity.getString("name");
                 nameUrl = entity.getString("url");
             } catch (JSONException e) {
-                e.printStackTrace();
+                LOGGER.error("The service response for the root URI \"" + rootUri + "\" is not JSON.", e);
                 return "The service response for the root URI \"" + rootUri + "\" is not JSON.";
             }
             switch (name) {
