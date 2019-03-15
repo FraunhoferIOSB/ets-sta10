@@ -106,19 +106,19 @@ public class FilterTests {
     }
 
     private void createEntities() throws ServiceFailureException, URISyntaxException {
-        Thing thing = new Thing("Thing 1", "The first thing.");
+        Thing thing = new Thing("Thing 0", "The first thing.");
         service.create(thing);
         THINGS.add(thing);
 
-        thing = new Thing("Thing 2", "The second thing.");
+        thing = new Thing("Thing 1", "The second thing.");
         service.create(thing);
         THINGS.add(thing);
 
-        thing = new Thing("Thing 3", "The third thing.");
+        thing = new Thing("Thing 2", "The third thing.");
         service.create(thing);
         THINGS.add(thing);
 
-        thing = new Thing("Thing 4", "The fourth thing.");
+        thing = new Thing("Thing 3", "The fourth thing.");
         service.create(thing);
         THINGS.add(thing);
 
@@ -299,6 +299,11 @@ public class FilterTests {
 
         filterAndCheck(doa, "Datastream/Thing/Datastreams/ObservedProperty/name eq 'ObservedProperty 0'", getFromList(O_PROPS, 0, 1, 2, 3));
         filterAndCheck(doa, "Datastream/Thing/Datastreams/ObservedProperty/name eq 'ObservedProperty 3'", getFromList(O_PROPS, 0, 1, 3));
+    }
+
+    @Test(description = "Test combined deep indirect filters.", groups = "level-3")
+    public void testParallelIndirection() {
+        filterAndCheck(service.things(), "Datastreams/ObservedProperties/name eq 'ObservedProperty 1' and Datastreams/Observations/result gt 10", getFromList(THINGS, 1));
     }
 
     @Test(description = "If the property is single-valued and has the null value, the service SHALL respond with 204 No Content.", groups = "level-3")
